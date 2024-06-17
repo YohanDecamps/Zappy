@@ -176,8 +176,6 @@ class Trantorian:
             bool: incantation's succes
         """
         print(self.uid, 'Follow leader', self.last_beacon_uid)
-        self.dispo_incant = False
-        self.broadcast("just$update", "all")
         self.follow_beacon()
         self.drop_stuff() # TODO send message to tell we are ready
         ans = ""
@@ -442,10 +440,13 @@ class Trantorian:
             self.received_messages.append(msg)
             return
         sender, receivers, msg_type, content, infos = parts
-        info_unpacked = unpack_infos(infos, self.uid)
-        self.merge_others(info_unpacked)
+        if msg_type == MessageType.BEACON:
+            for uid in receivers.split('|'):
+                self.others[uid][5] = False
         if receivers != "all" and self.uid not in receivers.split('|'):
             return
+        info_unpacked = unpack_infos(infos, self.uid)
+        self.merge_others(info_unpacked)
         try:
             MessageTypeParser().deserialize(self, int(msg_type), content, direct)
             self.last_msg_infos = [sender, msg_type, content]
