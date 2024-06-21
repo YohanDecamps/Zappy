@@ -311,6 +311,7 @@ class Trantorian:
             self.look_around()
             for _ in range(self.level): # TODO maybe some priority order here
                 if not self.take_tile_objects():
+                    self.forward()
                     break
                 self.forward()
             direct: int = random.randint(0, 5)
