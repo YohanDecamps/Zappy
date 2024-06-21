@@ -367,6 +367,10 @@ class Trantorian:
         self.state = "beacon"
         self.number_of_ritual_ready = 0
         while self.iter() and self.state == "beacon":
+            self.kill_others()
+            if not all(e in self.others for e in receivers):
+                self.state = "wander"
+                return
             self.broadcast(MessageTypeParser().serialize(MessageType.BEACON, self), receivers)
             if self.number_of_ritual_ready >= LEVELS[self.level + 1][0] - 1:
                 self.dprint("we are ready", receivers)
