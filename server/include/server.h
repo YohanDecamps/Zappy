@@ -130,8 +130,15 @@ typedef struct ai_client_s {
     size_t q_size;
     time_t last_cmd;
     time_t last_fed;
-    time_t last_inc;
+    bool busy;
 } ai_client_t;
+
+typedef struct {
+    array_t players;
+    time_t time;
+    int lvl;
+    int leader;
+} incantation_t;
 
 static const sound_direction_t conv_table[] = {
     S_NORTH, S_EAST, S_SOUTH, S_WEST};
@@ -158,6 +165,7 @@ typedef struct server_s {
     int egg_id;
     ressource_t map_res[R_COUNT];
     time_t last_refill;
+    array_t incantations;
 } server_t;
 
 int server(UNUSED int argc, UNUSED char **argv);
@@ -179,7 +187,7 @@ int init_ai_client(server_t *serv, int client_fd, char *team, size_t egg_idx);
 int remove_ai_client(server_t *server, size_t idx);
 void move_ai_client(server_t *server, ai_client_t *client, int dir);
 char **my_str_to_word_array(const char *str, char const *separator);
-ai_client_t *get_client_by_id(server_t *server, int client_id);
-egg_t *get_egg_by_id(server_t *server, int egg_id);
+ai_client_t *get_client_by_id(const server_t *server, int client_id);
+egg_t *get_egg_by_id(const server_t *server, int egg_id);
 void free_array(void **array);
 int iterate_gui(server_t *server);

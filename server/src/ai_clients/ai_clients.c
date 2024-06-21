@@ -96,7 +96,7 @@ int remove_ai_client(server_t *server, size_t idx)
     client = server->ai_clients.elements[idx];
     if (client) {
         gui_cmd_pdi(server, server->gui_client, client->id);
-        ai_write(client, UNPACK("quit\n"));
+        ai_write(client, UNPACK("dead\n"));
         disconnect_ai_client(client);
         CELL(server, client->pos.x, client->pos.y)->res[PLAYER].quantity--;
         free(client->buffer.str);
@@ -129,15 +129,20 @@ static bool starve_to_death(server_t *server, ai_client_t *ai)
     return false;
 }
 
-static void exec_queued_cmds(server_t *server, ai_client_t *client)
+static void summon_incantations(server_t *server)
 {
-    if (client->last_inc == 0) {
-        queue_pop_cmd(server, client);
-        return;
-    }
-    if (server->ctx.freq >= 0 &&
-        time(NULL) - client->last_inc > 300 / server->ctx.freq) {
-        ai_client_incantation_end(server, client);
+    incantation_t *inc = NULL;
+
+    for (size_t i = 0; i < server->incantations.nb_elements; ++i) {
+        inc = server->incantations.elements[i];
+        if (server->ctx.freq >= 0 &&
+            time(NULL) - inc->time > 300 / server->ctx.freq) {
+            ai_client_incantation_end(
+                server, get_client_by_id(server, inc->leader), inc);
+            array_destructor(&inc->players, free);
+            free(remove_elt_to_array(&server->incantations, i));
+            i -= 1;
+        }
     }
 }
 
@@ -152,7 +157,8 @@ void iterate_ai_clients(server_t *server)
             remove_ai_client(server, i);
             continue;
         }
-        exec_queued_cmds(server, client);
+        if (!client->busy)
+            queue_pop_cmd(server, client);
         FD_ZERO(&rfd);
         FD_SET(client->s_fd, &rfd);
         if (select(
@@ -161,4 +167,5 @@ void iterate_ai_clients(server_t *server)
             FD_ISSET(client->s_fd, &rfd))
             handle_ai_client(server, client);
     }
+    summon_incantations(server);
 }

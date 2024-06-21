@@ -6,10 +6,12 @@
 */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 
 #include "../ai_internal.h"
+#include "array.h"
 #include "commands.h"
 #include "gui_protocols/commands/commands.h"
 #include "server.h"
@@ -87,18 +89,77 @@ static const int INC_NEEDS[7][R_COUNT] = {
     },
 };
 
-static bool can_incantation(ai_client_t *client, const cell_t *cell)
+static int *malloc_int(int v)
 {
+    int *res = malloc(sizeof *res);
+
+    if (res == NULL)
+        return NULL;
+    *res = v;
+    return res;
+}
+
+static incantation_t *count_players(
+    const server_t *serv, const ai_client_t *client, const cell_t *cell)
+{
+    incantation_t *inc = calloc(1, sizeof *inc);
+    ai_client_t *read = NULL;
+    int *id = NULL;
+
+    if (!inc)
+        return OOM, NULL;
+    for (size_t i = 0; i < serv->ai_clients.nb_elements; i++) {
+        read = serv->ai_clients.elements[i];
+        if (read->id == client->id || read->lvl != client->lvl ||
+            cell->pos.x != read->pos.x || cell->pos.y != read->pos.y)
+            continue;
+        id = malloc_int(read->id);
+        if (id == NULL || add_elt_to_array(&inc->players, id) == RET_ERROR)
+            return free(array_destructor(&inc->players, free)), OOM, NULL;
+    }
+    if ((size_t)INC_NEEDS[client->lvl - 1][PLAYER] - 1 >
+        inc->players.nb_elements)
+        return free(array_destructor(&inc->players, free)),
+            ERR("Too few clients"), NULL;
+    inc->leader = client->id;
+    id = malloc_int(client->id);
+    if (id == NULL || add_elt_to_array(&inc->players, id) == RET_ERROR)
+        return free(array_destructor(&inc->players, free)), OOM, NULL;
+    return inc;
+}
+
+static incantation_t *check_start_incantation(
+    const server_t *server, const ai_client_t *client, const cell_t *cell)
+{
+    incantation_t *inc = NULL;
+
     if (client->lvl >= 7 || client->lvl == 0)
-        return false;
+        return NULL;
     for (size_t i = 0; i < R_COUNT; ++i)
         if (cell->res[i].quantity < INC_NEEDS[client->lvl - 1][i])
+            return NULL;
+    inc = count_players(server, client, cell);
+    if (inc == NULL)
+        return NULL;
+    inc->lvl = client->lvl;
+    inc->time = time(NULL);
+    return inc;
+}
+
+static bool check_end_incantation(
+    const server_t *server, const cell_t *cell, const incantation_t *inc)
+{
+    for (size_t i = 0; i < R_COUNT; ++i)
+        if (cell->res[i].quantity < INC_NEEDS[inc->lvl - 1][i])
+            return false;
+    for (size_t i = 0; i < inc->players.nb_elements; ++i)
+        if (get_client_by_id(server, *(int *)inc->players.elements[i]) == NULL)
             return false;
     return true;
 }
 
 static void consume_ressources(
-    server_t *server, ai_client_t *client, cell_t *cell, bool real_life)
+    server_t *server, ai_client_t *client, cell_t *cell)
 {
     int qty = 0;
 
@@ -107,57 +168,57 @@ static void consume_ressources(
     for (size_t i = 0; i < R_COUNT - 2; ++i) {
         qty = INC_NEEDS[client->lvl - 1][i];
         cell->res[i].quantity -= qty;
-        if (real_life)
-            server->map_res[i].quantity -= qty;
+        server->map_res[i].quantity -= qty;
     }
 }
 
-void ai_client_incantation_end(server_t *server, ai_client_t *client)
+void ai_client_incantation_end(
+    server_t *server, ai_client_t *leader, incantation_t *inc)
 {
     char buffer[40];
-    cell_t *cell = CELL(server, client->pos.x, client->pos.y);
+    cell_t *cell = CELL(server, leader->pos.x, leader->pos.y);
+    ai_client_t *read = NULL;
 
-    client->last_inc = 0;
-    if (!can_incantation(client, cell)) {
-        gui_cmd_pie(server, server->gui_client, client->pos, 0);
-        ai_dprintf(client, "ko\n");
+    if (!check_end_incantation(server, cell, inc)) {
+        gui_cmd_pie(server, server->gui_client, leader->pos, 0);
+        ai_dprintf(leader, "ko\n");
         ERR("Uwu you lost all your money");
         return;
     }
-    consume_ressources(server, client, cell, true);
-    client->lvl += 1;
-    sprintf(buffer, "%d %d", client->pos.x, client->pos.y);
+    sprintf(buffer, "%d %d", leader->pos.x, leader->pos.y);
     gui_cmd_bct(server, server->gui_client, buffer);
-    ai_dprintf(client, "Current level: %d\n", client->lvl);
-    gui_cmd_pie(server, server->gui_client, client->pos, 1);
-    sprintf(buffer, "%d", client->id);
-    gui_cmd_plv(server, server->gui_client, buffer);
+    consume_ressources(server, leader, cell);
+    for (size_t i = 0; i < inc->players.nb_elements; ++i) {
+        read = get_client_by_id(server, *(int *)inc->players.elements[i]);
+        read->busy = false;
+        read->lvl += 1;
+        ai_dprintf(read, "Current level: %d\n", read->lvl);
+        gui_cmd_pie(server, server->gui_client, read->pos, 1);
+        sprintf(buffer, "%d", read->id);
+        gui_cmd_plv(server, server->gui_client, buffer);
+    }
 }
 
 void ai_cmd_incantation(
     server_t *server, ai_client_t *client, UNUSED char *args)
 {
-    cell_t cell_cpy = *CELL(server, client->pos.x, client->pos.y);
+    cell_t *cell = CELL(server, client->pos.x, client->pos.y);
     ai_client_t *read = NULL;
     char buffer[4096];
-    char *cringe = buffer;
-    time_t now = time(NULL);
+    char *ptr = buffer;
+    incantation_t *inc = check_start_incantation(server, client, cell);
 
-    if (!can_incantation(client, &cell_cpy)) {
+    if (inc == NULL ||
+        add_elt_to_array(&server->incantations, inc) == RET_ERROR) {
         ai_write(client, "ko\n", 3);
         ERR("Skill issue");
         return;
     }
-    cringe += sprintf(
-        buffer, "%d %d %d", cell_cpy.pos.x, cell_cpy.pos.y, client->lvl);
-    for (size_t i = 0; i < server->ai_clients.nb_elements; ++i) {
-        read = server->ai_clients.elements[i];
-        if (read->pos.x == client->pos.x && read->pos.y == client->pos.y &&
-            client->lvl == read->lvl && can_incantation(read, &cell_cpy)) {
-            consume_ressources(server, client, &cell_cpy, false);
-            client->last_inc = now;
-            cringe += sprintf(cringe, " %d", read->id);
-        }
+    ptr += sprintf(ptr, "%d %d %d", cell->pos.x, cell->pos.y, client->lvl);
+    for (size_t i = 0; i < inc->players.nb_elements; ++i) {
+        read = get_client_by_id(server, *(int *)inc->players.elements[i]);
+        read->busy = true;
+        ptr += sprintf(ptr, " %d", read->id);
     }
     gui_cmd_pic(server, server->gui_client, buffer);
     ai_dprintf(client, "Elevation underway\n");

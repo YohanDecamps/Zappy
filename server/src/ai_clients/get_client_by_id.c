@@ -7,7 +7,7 @@
 
 #include "server.h"
 
-egg_t *get_egg_by_id(server_t *server, int egg_id)
+egg_t *get_egg_by_id(const server_t *server, int egg_id)
 {
     egg_t *current = NULL;
 
@@ -19,7 +19,7 @@ egg_t *get_egg_by_id(server_t *server, int egg_id)
     return NULL;
 }
 
-ai_client_t *get_client_by_id(server_t *server, int client_id)
+ai_client_t *get_client_by_id(const server_t *server, int client_id)
 {
     ai_client_t *current = NULL;
 
