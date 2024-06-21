@@ -196,6 +196,7 @@ void ai_client_incantation_end(server_t *server, incantation_t *inc)
         ai_dprintf(leader, "ko\n");
         return;
     }
+    ERRF("level passed: %d", inc->lvl + 1);
     sprintf(buffer, "%d %d", leader->pos.x, leader->pos.y);
     gui_cmd_bct(server, server->gui_client, buffer);
     consume_ressources(server, leader, cell);
