@@ -152,12 +152,12 @@ void iterate_ai_clients(server_t *server)
 
     for (size_t i = 0; i < server->ai_clients.nb_elements; ++i) {
         client = server->ai_clients.elements[i];
-        if (client->s_fd < 0 || starve_to_death(server, client)) {
-            ERR("Disconnected"), remove_ai_client(server, i);
-            continue;
-        }
         if (!client->busy)
             queue_pop_cmd(server, client);
+        if (client->s_fd < 0 || starve_to_death(server, client)) {
+            ERR("Disconnected"), remove_ai_client(server, i), i -= 1;
+            continue;
+        }
         FD_ZERO(&rfd);
         FD_SET(client->s_fd, &rfd);
         if (select(

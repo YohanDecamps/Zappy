@@ -73,7 +73,7 @@ typedef struct {
 
 typedef struct {
     vector_t pos;
-    char *team;
+    char team[512];
     int id;
 } egg_t;
 
