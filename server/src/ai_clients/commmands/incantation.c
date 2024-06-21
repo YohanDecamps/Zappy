@@ -133,8 +133,8 @@ static incantation_t *check_start_incantation(
 {
     incantation_t *inc = NULL;
 
-    if (client->lvl >= 7 || client->lvl == 0)
-        return NULL;
+    if (client->lvl >= 8 || client->lvl <= 0)
+        return ERRF("incantation: invalid level %d", client->lvl), NULL;
     for (size_t i = 0; i < R_COUNT; ++i)
         if (cell->res[i].quantity < INC_NEEDS[client->lvl - 1][i])
             return ERRF(
@@ -154,6 +154,8 @@ static bool check_end_incantation(
 {
     int *id = NULL;
 
+    if (inc->lvl >= 8 || inc->lvl <= 0)
+        return ERRF("incantation: invalid level %d", inc->lvl), NULL;
     for (size_t i = 0; i < R_COUNT; ++i)
         if (cell->res[i].quantity < INC_NEEDS[inc->lvl - 1][i])
             return ERR("incantation: you lost all your money"), false;
@@ -170,8 +172,6 @@ static void consume_ressources(
 {
     int qty = 0;
 
-    if (client->lvl >= 7 || client->lvl == 0)
-        return;
     for (size_t i = 0; i < R_COUNT - 2; ++i) {
         qty = INC_NEEDS[client->lvl - 1][i];
         cell->res[i].quantity -= qty;
