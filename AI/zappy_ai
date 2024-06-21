@@ -39,8 +39,11 @@ def main(host: str, port: int, team: str):
         if queue.empty():
             continue
         sended = queue.get()
-        if sended == "birth":
-            t = Trantorian(host, port, team)
+        if sended.startswith("birth"):
+            try:
+                t = Trantorian(host, port, team)
+            except RuntimeError:
+                print("Trantor was aborted")
             threads.append(Process(target=t.born, args=(queue,)))
             threads[-1].start()
     return
