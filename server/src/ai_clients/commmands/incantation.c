@@ -120,7 +120,7 @@ static incantation_t *count_players(
     if ((size_t)INC_NEEDS[client->lvl - 1][PLAYER] - 1 >
         inc->players.nb_elements)
         return free(array_destructor(&inc->players, free)),
-               ERR("Too few clients"), NULL;
+            ERR("Too few clients"), NULL;
     inc->leader = client->id;
     id = malloc_int(client->id);
     if (id == NULL || add_elt_to_array(&inc->players, id) == RET_ERROR)
@@ -137,7 +137,10 @@ static incantation_t *check_start_incantation(
         return NULL;
     for (size_t i = 0; i < R_COUNT; ++i)
         if (cell->res[i].quantity < INC_NEEDS[client->lvl - 1][i])
-            return NULL;
+            return ERRF(
+                "missing %s: got %d has %d", r_name[i],
+                cell->res[i].quantity, INC_NEEDS[client->lvl - 1][i]),
+                NULL;
     inc = count_players(server, client, cell);
     if (inc == NULL)
         return NULL;
@@ -219,7 +222,6 @@ void ai_cmd_incantation(
     if (inc == NULL ||
         add_elt_to_array(&server->incantations, inc) == RET_ERROR) {
         ai_write(client, "ko\n", 3);
-        ERR("Skill issue");
         return;
     }
     ptr += sprintf(ptr, "%d %d %d", cell->pos.x, cell->pos.y, client->lvl);
