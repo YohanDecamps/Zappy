@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 
 #include "server.h"
 
@@ -36,21 +37,20 @@ static int check_flags(const int *array, char *argv[])
 
 int arg_parse(int argc, char *argv[], context_t *ctx)
 {
-    int adjust =
-        strcmp(argv[argc - 1], "-v") == 0 ||
-        strcmp(argv[argc - 1], "--verbose") == 0;
+    int adjust = strcmp(argv[argc - 1], "-v") == 0
+                || strcmp(argv[argc - 1], "--verbose") == 0;
     int array[6] = {1, 3, 5, 7, argc - 4 - adjust, argc - 2 - adjust};
 
-    if (argc < 13)
+    if (argc < 13 || check_flags(array, argv) != RET_VALID)
         return RET_ERROR;
-    if (check_flags(array, argv) != RET_VALID)
+    errno = 0;
+    ctx->port = (int)strtol(argv[2], NULL, 10);
+    ctx->width = strtol(argv[4], NULL, 10);
+    ctx->height = strtol(argv[6], NULL, 10);
+    ctx->client_nb = strtol(argv[argc - 3 - adjust], NULL, 10);
+    ctx->freq = strtol(argv[argc - 1 - adjust], NULL, 10);
+    if (errno != 0)
         return RET_ERROR;
-    // TODO error handling with atoi (maybe port under 1024 ?)
-    ctx->port = atoi(argv[2]);
-    ctx->width = atoi(argv[4]);
-    ctx->height = atoi(argv[6]);
-    ctx->client_nb = atoi(argv[argc - 3 - adjust]);
-    ctx->freq = atoi(argv[argc - 1 - adjust]);
     for (int i = 8; i < array[4]; ++i)
         if (add_elt_to_array(&ctx->names, argv[i]) == RET_ERROR)
             return RET_ERROR;

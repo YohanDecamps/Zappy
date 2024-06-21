@@ -23,8 +23,8 @@ void gui_cmd_bct(server_t *server, gui_client_t *client, char *args)
         return;
     cell = CELL(server, atoi(cmd[0]), atoi(cmd[1]));
     gui_dprintf(
-        client, "bct %d %d %d %d %d %d %d %d %d\n", cell->pos.x,
-        cell->pos.y, cell->res[FOOD].quantity, cell->res[LINEMATE].quantity,
+        client, "bct %d %d %d %d %d %d %d %d %d\n", cell->pos.x, cell->pos.y,
+        cell->res[FOOD].quantity, cell->res[LINEMATE].quantity,
         cell->res[DERAUMERE].quantity, cell->res[SIBUR].quantity,
         cell->res[MENDIANE].quantity, cell->res[PHIRAS].quantity,
         cell->res[THYSTAME].quantity);

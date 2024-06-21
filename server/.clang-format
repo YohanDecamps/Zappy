@@ -10,4 +10,5 @@ AllowShortLoopsOnASingleLine: false
 AlignAfterOpenBracket: AlwaysBreak
 BreakBeforeBraces: Mozilla
 IndentPPDirectives: BeforeHash
+ColumnLimit: 79
 ...

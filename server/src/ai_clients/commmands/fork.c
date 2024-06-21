@@ -10,7 +10,8 @@
 #include "gui_protocols/commands/commands.h"
 #include "server.h"
 
-static void after_fork(server_t *server, ai_client_t *client, UNUSED char *args)
+static void after_fork(
+    server_t *server, ai_client_t *client, UNUSED char *args)
 {
     egg_t *egg = spawn_egg(server, client->team);
 

@@ -7,10 +7,12 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+
 #include "commands.h"
 #include "server.h"
 
-void gui_cmd_pie(server_t *server, gui_client_t *client, vector_t pos, bool r)
+void gui_cmd_pie(
+    UNUSED server_t *server, gui_client_t *client, vector_t pos, bool r)
 {
     if (client == NULL)
         return;

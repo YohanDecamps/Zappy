@@ -6,6 +6,7 @@
 */
 
 #include <stdio.h>
+
 #include "commands.h"
 #include "server.h"
 

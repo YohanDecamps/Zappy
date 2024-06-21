@@ -151,8 +151,8 @@ int iterate_gui(server_t *server)
     FD_ZERO(&rfd);
     FD_SET(gui->s_fd, &rfd);
     if (select(
-            server->s_fd + 1, &rfd, NULL, NULL,
-            &(struct timeval){0, 1000}) > 0 &&
+            server->s_fd + 1, &rfd, NULL, NULL, &(struct timeval){0, 1000}) >
+            0 &&
         FD_ISSET(gui->s_fd, &rfd))
         handle_gui(server);
     return RET_VALID;

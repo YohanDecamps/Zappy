@@ -15,7 +15,8 @@
 #include "server.h"
 
 static const int INC_NEEDS[7][R_COUNT] = {
-    { // level 1 -> 2
+    {
+        // level 1 -> 2
         [PLAYER] = 1,
         [LINEMATE] = 1,
         [DERAUMERE] = 0,
@@ -24,7 +25,8 @@ static const int INC_NEEDS[7][R_COUNT] = {
         [PHIRAS] = 0,
         [THYSTAME] = 0,
     },
-    { // level 2 -> 3
+    {
+        // level 2 -> 3
         [PLAYER] = 2,
         [LINEMATE] = 1,
         [DERAUMERE] = 1,
@@ -33,7 +35,8 @@ static const int INC_NEEDS[7][R_COUNT] = {
         [PHIRAS] = 0,
         [THYSTAME] = 0,
     },
-    { // level 3 -> 4
+    {
+        // level 3 -> 4
         [PLAYER] = 2,
         [LINEMATE] = 2,
         [DERAUMERE] = 0,
@@ -42,7 +45,8 @@ static const int INC_NEEDS[7][R_COUNT] = {
         [PHIRAS] = 2,
         [THYSTAME] = 0,
     },
-    { // level 4 -> 5
+    {
+        // level 4 -> 5
         [PLAYER] = 4,
         [LINEMATE] = 1,
         [DERAUMERE] = 1,
@@ -51,7 +55,8 @@ static const int INC_NEEDS[7][R_COUNT] = {
         [PHIRAS] = 1,
         [THYSTAME] = 0,
     },
-    { // level 5 -> 6
+    {
+        // level 5 -> 6
         [PLAYER] = 4,
         [LINEMATE] = 1,
         [DERAUMERE] = 2,
@@ -60,7 +65,8 @@ static const int INC_NEEDS[7][R_COUNT] = {
         [PHIRAS] = 0,
         [THYSTAME] = 0,
     },
-    { // level 6 -> 7
+    {
+        // level 6 -> 7
         [PLAYER] = 6,
         [LINEMATE] = 1,
         [DERAUMERE] = 2,
@@ -69,7 +75,8 @@ static const int INC_NEEDS[7][R_COUNT] = {
         [PHIRAS] = 1,
         [THYSTAME] = 0,
     },
-    { // level 7 -> 8
+    {
+        // level 7 -> 8
         [PLAYER] = 6,
         [LINEMATE] = 2,
         [DERAUMERE] = 2,
@@ -141,7 +148,8 @@ void ai_cmd_incantation(
         ERR("Skill issue");
         return;
     }
-    cringe += sprintf(buffer, "%d %d %d", cell_cpy.pos.x, cell_cpy.pos.y, client->lvl);
+    cringe += sprintf(
+        buffer, "%d %d %d", cell_cpy.pos.x, cell_cpy.pos.y, client->lvl);
     for (size_t i = 0; i < server->ai_clients.nb_elements; ++i) {
         read = server->ai_clients.elements[i];
         if (read->pos.x == client->pos.x && read->pos.y == client->pos.y &&

@@ -11,8 +11,8 @@
 #include "commands.h"
 #include "server.h"
 
-void
-gui_cmd_pdr(UNUSED server_t *server, gui_client_t *client, int ai_id, int r)
+void gui_cmd_pdr(
+    UNUSED server_t *server, gui_client_t *client, int ai_id, int r)
 {
     if (client == NULL)
         return;

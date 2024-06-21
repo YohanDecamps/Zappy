@@ -21,6 +21,6 @@ void gui_cmd_ppo(server_t *server, gui_client_t *client, char *args)
     if (client == NULL || current == NULL)
         return;
     gui_dprintf(
-        client, "ppo %d %d %d %d\n", client_id, current->pos.x,
-        current->pos.y, current->dir + 1);
+        client, "ppo %d %d %d %d\n", client_id, current->pos.x, current->pos.y,
+        current->dir + 1);
 }

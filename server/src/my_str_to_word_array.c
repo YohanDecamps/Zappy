@@ -5,10 +5,10 @@
 ** my_str_to_word_array
 */
 
-#include <stddef.h>
-#include <stdlib.h>
-#include <stdio.h>
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 static bool is_separator(char c, char const *separator)
 {
@@ -82,8 +82,8 @@ static int getindex(int index, const char *str, char const *separator)
         if (nbr == index) {
             return (i);
         }
-        if (my_is_not_separator(str[i], separator) == 0
-        && my_is_not_separator(str[i + 1], separator) == 1) {
+        if (my_is_not_separator(str[i], separator) == 0 &&
+            my_is_not_separator(str[i + 1], separator) == 1) {
             nbr = nbr + 1;
         }
         i = i + 1;

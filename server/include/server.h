@@ -7,18 +7,18 @@
 
 #pragma once
 
-#include "array.h"
-
-#include <bits/stdint-uintn.h>
-#include <unistd.h>
-#include <stdbool.h>
 #include <arpa/inet.h>
+#include <bits/stdint-uintn.h>
+#include <stdbool.h>
 #include <sys/socket.h>
+#include <unistd.h>
+
+#include "array.h"
 
 #define ATTR(x) __attribute__((x))
 #define UNUSED ATTR(unused)
 #define MOD(x, y) ((((x) % (y)) + (y)) % (y))
-#define LEN(x) (sizeof(x) / sizeof*(x))
+#define LEN(x) (sizeof(x) / sizeof *(x))
 #define UNPACK(x) (x), sizeof(x)
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)
@@ -133,7 +133,8 @@ typedef struct ai_client_s {
     time_t last_inc;
 } ai_client_t;
 
-static const sound_direction_t conv_table[] = {S_NORTH, S_EAST, S_SOUTH, S_WEST};
+static const sound_direction_t conv_table[] = {
+    S_NORTH, S_EAST, S_SOUTH, S_WEST};
 
 typedef struct gui_client_s {
     int s_fd;

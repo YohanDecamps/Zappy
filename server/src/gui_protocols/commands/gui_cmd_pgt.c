@@ -10,8 +10,8 @@
 
 #include "commands.h"
 
-void
-gui_cmd_pgt(UNUSED server_t *server, gui_client_t *client, int ai_id, int r)
+void gui_cmd_pgt(
+    UNUSED server_t *server, gui_client_t *client, int ai_id, int r)
 {
     if (client == NULL)
         return;

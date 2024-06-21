@@ -7,8 +7,8 @@
 
 #include <stdio.h>
 
-#include "commands.h"
 #include "../../gui_protocols/commands/commands.h"
+#include "commands.h"
 #include "server.h"
 
 void ai_cmd_eject(server_t *server, ai_client_t *client, UNUSED char *args)

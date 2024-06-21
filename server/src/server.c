@@ -59,7 +59,8 @@ static int init_server(server_t *serv, int port)
     if (serv->s_fd == -1)
         return ERR("socket failed"), RET_ERROR;
     if (setsockopt(
-            serv->s_fd, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int)) == -1)
+            serv->s_fd, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int)) ==
+        -1)
         return ERR("setsockopt failed"), RET_ERROR;
     serv->s_addr.sin_family = AF_INET;
     serv->s_addr.sin_port = htons(port);
@@ -259,8 +260,7 @@ static void refill_map(server_t *server, context_t *ctx)
             server->map_res[i].quantity++;
         }
     }
-    if (server->gui_client)
-        gui_cmd_mct(server, server->gui_client, NULL);
+    gui_cmd_mct(server, server->gui_client, NULL);
 }
 
 static int init_map(server_t *server, context_t *ctx)

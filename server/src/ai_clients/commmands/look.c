@@ -100,28 +100,35 @@ static look_payload_t *look(server_t *server, ai_client_t *client)
     if (payload == NULL)
         return NULL;
     get_cell_payload(server, &client->pos, &payload->cell_content[0]);
-    payload->idx++;
+    payload->idx += 1;
     switch (client->dir) {
         case NORTH:
-            payload = look_north(server, client, payload);
-            break;
+            return look_north(server, client, payload);
         case EAST:
-            payload = look_east(server, client, payload);
-            break;
+            return look_east(server, client, payload);
         case SOUTH:
-            payload = look_south(server, client, payload);
-            break;
+            return look_south(server, client, payload);
         case WEST:
-            payload = look_west(server, client, payload);
-            break;
+            return look_west(server, client, payload);
+        default:
+            return payload;
     }
-    return payload;
+}
+
+static void print_cell_content(
+    ai_client_t *client, payload_t *cell, bool *space)
+{
+    for (short j = 0; j < R_COUNT; ++j) {
+        for (int k = 0; k < cell->res[j].quantity; ++k) {
+            ai_dprintf(client, "%s%s", (space) ? " " : "", r_name[j]);
+            *space = true;
+        }
+    }
 }
 
 void ai_cmd_look(server_t *server, ai_client_t *client, UNUSED char *args)
 {
     look_payload_t *payload = look(server, client);
-    payload_t *cell = NULL;
     bool space = false;
 
     if (payload == NULL) {
@@ -130,15 +137,9 @@ void ai_cmd_look(server_t *server, ai_client_t *client, UNUSED char *args)
     }
     ai_dprintf(client, "[");
     for (size_t i = 0; i < payload->size; ++i) {
-        cell = &payload->cell_content[i];
         if (i != 0)
             ai_dprintf(client, ",");
-        for (short j = 0; j < R_COUNT; ++j) {
-            for (int k = 0; k < cell->res[j].quantity; ++k) {
-                ai_dprintf(client, "%s%s", (space) ? " " : "", r_name[j]);
-                space = true;
-            }
-        }
+        print_cell_content(client, &payload->cell_content[i], &space);
     }
     ai_dprintf(client, "]\n");
 }

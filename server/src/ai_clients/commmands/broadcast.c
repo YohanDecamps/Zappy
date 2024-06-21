@@ -30,35 +30,24 @@ static int compute(const int a, const int b, const int grid_size)
 static int compute_dir(
     const vector_t p1, const vector_t p2, const int grid_size[2])
 {
-    int dx = 0;
-    int dy = 0;
-    sound_direction_t result = -1;
+    int dx = compute(p1.x, p2.x, grid_size[0]);
+    int dy = compute(p1.y, p2.y, grid_size[1]);
 
-    dx = compute(p1.x, p2.x, grid_size[0]);
-    dy = compute(p1.y, p2.y, grid_size[1]);
     if (abs(dx) == abs(dy)) {
         if (dy < 0 && dx > 0)
-            result = S_SOUTH_WEST;
+            return S_SOUTH_WEST;
         if (dy < 0 && dx < 0)
-            result = S_SOUTH_EAST;
+            return S_SOUTH_EAST;
         if (dy > 0 && dx > 0)
-            result = S_NORTH_WEST;
+            return S_NORTH_WEST;
         if (dy > 0 && dx < 0)
-            result = S_NORTH_EAST;
+            return S_NORTH_EAST;
     }
-    else if (abs(dy) >= abs(dx)) {
-        if (dy < 0)
-            result = S_SOUTH;
-        if (dy > 0)
-            result = S_NORTH;
-    }
-    else if (abs(dx) >= abs(dy)) {
-        if (dx > 0)
-            result = S_WEST;
-        if (dx < 0)
-            result = S_EAST;
-    }
-    return result;
+    if (abs(dy) >= abs(dx))
+        return (dy < 0) ? S_SOUTH : S_NORTH;
+    if (abs(dx) >= abs(dy))
+        return (dx > 0) ? S_WEST : S_EAST;
+    return -1;
 }
 
 void ai_cmd_broadcast(server_t *server, ai_client_t *client, char *args)

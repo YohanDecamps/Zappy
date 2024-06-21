@@ -1,6 +1,6 @@
 /*
 ** EPITECH PROJECT, 2024
-** g
+** zappy
 ** File description:
 ** gui_cmd_pbc
 */
@@ -11,8 +11,8 @@
 #include "commands.h"
 #include "server.h"
 
-void
-gui_cmd_pbc(UNUSED server_t *server, gui_client_t *client, int ai_id, char *m)
+void gui_cmd_pbc(
+    UNUSED server_t *server, gui_client_t *client, int ai_id, char *m)
 {
     if (client == NULL)
         return;

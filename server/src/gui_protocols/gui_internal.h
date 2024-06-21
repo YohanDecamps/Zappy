@@ -9,7 +9,7 @@
 
 #include "server.h"
 
-typedef void (*gui_cmd_func_t)(server_t *server, gui_client_t *client, char *args);
+typedef void (*gui_cmd_func_t)(server_t *, gui_client_t *, char *);
 
 struct gui_cmd_s {
     char *cmd;

@@ -5,6 +5,8 @@
 ** ai_clients
 */
 
+#include <stdio.h>
+
 #include "commands.h"
 #include "gui_protocols/commands/commands.h"
 #include "server.h"
@@ -13,6 +15,7 @@ void ai_cmd_set(server_t *server, ai_client_t *client, char *args)
 {
     res_name_t res = get_ressource_type(args);
     cell_t *cell = CELL(server, client->pos.x, client->pos.y);
+    char buff[256] = {0};
 
     if ((int)res == -1 || client->res[res].quantity == 0) {
         ai_write(client, "ko\n", 3);
@@ -22,6 +25,8 @@ void ai_cmd_set(server_t *server, ai_client_t *client, char *args)
     server->map_res[res].quantity++;
     client->res[res].quantity--;
     ai_write(client, "ok\n", 3);
+    sprintf(buff, "%d", client->id);
     gui_cmd_pdr(server, server->gui_client, client->id, res);
     gui_cmd_mct(server, server->gui_client, NULL);
+    gui_cmd_pin(server, server->gui_client, buff);
 }
