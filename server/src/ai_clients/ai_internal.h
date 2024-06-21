@@ -30,5 +30,4 @@ void disconnect_ai_client(ai_client_t *ai);
 void handle_ai_client(server_t *server, ai_client_t *client);
 bool queue_add_cmd(ai_client_t *client, queued_cmd_t *qcmd);
 void queue_pop_cmd(server_t *server, ai_client_t *client);
-void ai_client_incantation_end(
-    server_t *server, ai_client_t *leader, incantation_t *inc);
+void ai_client_incantation_end(server_t *server, incantation_t *inc);

@@ -137,8 +137,7 @@ static void summon_incantations(server_t *server)
         inc = server->incantations.elements[i];
         if (server->ctx.freq >= 0 &&
             time(NULL) - inc->time > 300 / server->ctx.freq) {
-            ai_client_incantation_end(
-                server, get_client_by_id(server, inc->leader), inc);
+            ai_client_incantation_end(server, inc);
             array_destructor(&inc->players, free);
             free(remove_elt_to_array(&server->incantations, i));
             i -= 1;
@@ -154,7 +153,7 @@ void iterate_ai_clients(server_t *server)
     for (size_t i = 0; i < server->ai_clients.nb_elements; ++i) {
         client = server->ai_clients.elements[i];
         if (client->s_fd < 0 || starve_to_death(server, client)) {
-            remove_ai_client(server, i);
+            ERR("Disconnected"), remove_ai_client(server, i);
             continue;
         }
         if (!client->busy)

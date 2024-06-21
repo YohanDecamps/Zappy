@@ -137,7 +137,10 @@ static incantation_t *check_start_incantation(
         return NULL;
     for (size_t i = 0; i < R_COUNT; ++i)
         if (cell->res[i].quantity < INC_NEEDS[client->lvl - 1][i])
-            return NULL;
+            return ERRF(
+                "missing %s: got %d has %d", r_name[i],
+                cell->res[i].quantity, INC_NEEDS[client->lvl - 1][i]),
+                NULL;
     inc = count_players(server, client, cell);
     if (inc == NULL)
         return NULL;
@@ -149,12 +152,16 @@ static incantation_t *check_start_incantation(
 static bool check_end_incantation(
     const server_t *server, const cell_t *cell, const incantation_t *inc)
 {
+    int *id = NULL;
+
     for (size_t i = 0; i < R_COUNT; ++i)
         if (cell->res[i].quantity < INC_NEEDS[inc->lvl - 1][i])
-            return false;
-    for (size_t i = 0; i < inc->players.nb_elements; ++i)
-        if (get_client_by_id(server, *(int *)inc->players.elements[i]) == NULL)
-            return false;
+            return ERR("incantation: you lost all your money"), false;
+    for (size_t i = 0; i < inc->players.nb_elements; ++i) {
+        id = inc->players.elements[i];
+        if (id == NULL || get_client_by_id(server, *id) == NULL)
+            return ERR("incantation: friend gone, friendship lost"), false;
+    }
     return true;
 }
 
@@ -172,17 +179,21 @@ static void consume_ressources(
     }
 }
 
-void ai_client_incantation_end(
-    server_t *server, ai_client_t *leader, incantation_t *inc)
+void ai_client_incantation_end(server_t *server, incantation_t *inc)
 {
     char buffer[40];
-    cell_t *cell = CELL(server, leader->pos.x, leader->pos.y);
     ai_client_t *read = NULL;
+    cell_t *cell = NULL;
+    ai_client_t *leader = get_client_by_id(server, inc->leader);
 
+    if (leader == NULL) {
+        ERR("incantation: leader went missing mid-incantation");
+        return;
+    }
+    cell = CELL(server, leader->pos.x, leader->pos.y);
     if (!check_end_incantation(server, cell, inc)) {
         gui_cmd_pie(server, server->gui_client, leader->pos, 0);
         ai_dprintf(leader, "ko\n");
-        ERR("Uwu you lost all your money");
         return;
     }
     sprintf(buffer, "%d %d", leader->pos.x, leader->pos.y);
@@ -211,7 +222,6 @@ void ai_cmd_incantation(
     if (inc == NULL ||
         add_elt_to_array(&server->incantations, inc) == RET_ERROR) {
         ai_write(client, "ko\n", 3);
-        ERR("Skill issue");
         return;
     }
     ptr += sprintf(ptr, "%d %d %d", cell->pos.x, cell->pos.y, client->lvl);
