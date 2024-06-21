@@ -205,10 +205,10 @@ void ai_client_incantation_end(server_t *server, incantation_t *inc)
         read->busy = false;
         read->lvl += 1;
         ai_dprintf(read, "Current level: %d\n", read->lvl);
-        gui_cmd_pie(server, server->gui_client, read->pos, 1);
         sprintf(buffer, "%d", read->id);
         gui_cmd_plv(server, server->gui_client, buffer);
     }
+    gui_cmd_pie(server, server->gui_client, leader->pos, 1);
 }
 
 void ai_cmd_incantation(
