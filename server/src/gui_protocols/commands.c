@@ -146,7 +146,7 @@ int iterate_gui(server_t *server)
 
     if (!gui)
         return RET_ERROR;
-    if (gui->s_fd <= 0)
+    if (gui->s_fd < 0)
         return remove_gui(server);
     FD_ZERO(&rfd);
     FD_SET(gui->s_fd, &rfd);

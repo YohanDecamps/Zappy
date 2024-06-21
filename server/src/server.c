@@ -140,7 +140,7 @@ static long get_egg(server_t *serv, const char *team)
 
     for (size_t i = 0; i < serv->eggs.nb_elements; i++) {
         egg = serv->eggs.elements[i];
-        if (egg->team == NULL || strcmp(team, egg->team) == 0)
+        if (egg->team[0] == '\0' || strcmp(team, egg->team) == 0)
             return (long)i;
     }
     return -1;
@@ -208,8 +208,9 @@ static void handle_waitlist(server_t *serv, size_t i, int client_fd)
     ssize_t bytes_read = 0;
 
     bytes_read = read(client_fd, buffer, DEFAULT_SIZE);
-    if (bytes_read <= 0) {
-        remove_ai_client(serv, i);
+    if (bytes_read < 0) {
+        free(remove_elt_to_array(&serv->waitlist_fd, i));
+        ERR("waitlist client disconnected");
         return;
     }
     buffer[bytes_read] = '\0';
@@ -276,7 +277,7 @@ static int init_map(server_t *server, context_t *ctx)
         server->map[i].pos = (vector_t){i % ctx->width, i / ctx->width};
     for (size_t i = 0;
          i < server->ctx.names.nb_elements * server->ctx.client_nb; ++i)
-        spawn_egg(server, NULL);
+        spawn_egg(server, "");
     return RET_VALID;
 }
 
@@ -297,7 +298,7 @@ egg_t *spawn_egg(server_t *server, char *team)
         .x = rand() % (int)server->ctx.width,
         .y = rand() % (int)server->ctx.height,
     };
-    egg->team = team;
+    strcpy(egg->team, team);
     if (add_elt_to_array(&server->eggs, egg) == RET_ERROR)
         return OOM, free(egg), NULL;
     egg->id = server->egg_id;

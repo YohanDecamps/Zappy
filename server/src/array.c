@@ -42,15 +42,14 @@ void *remove_elt_to_array(array_t *array, size_t i)
 
 array_t *array_constructor(void)
 {
-    array_t *array = malloc(sizeof(array_t));
+    array_t *array = calloc(1, sizeof *array);
 
     if (!array)
         return OOM, NULL;
-    array->nb_elements = 0;
     array->size = DEFAULT_SIZE;
-    array->elements = calloc(DEFAULT_SIZE, sizeof(void *));
+    array->elements = calloc(array->size, sizeof(void *));
     if (!array->elements)
-        return OOM, NULL;
+        return OOM, free(array), NULL;
     return array;
 }
 
@@ -62,6 +61,7 @@ void *array_destructor(array_t *array, void (*free_elt)(void *))
         for (size_t i = 0; free_elt != NULL && i < array->nb_elements; i++)
             free_elt(array->elements[i]);
         free(array->elements);
+        array->elements = NULL;
     }
     return array;
 }

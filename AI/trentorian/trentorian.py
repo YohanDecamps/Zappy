@@ -385,9 +385,9 @@ class Trantorian:
         """
         if not self.iter_food():
             return
-        if len(self.others) > 15:
-            self.suicide()
-            return
+        # if len(self.others) > 15:
+        #     self.suicide()
+        #     return
         if self.client.team_size > 0 and len(self.others) < MAX_PLAYER:
             self.asexual_multiplication(queue)
         self.broadcast("im$alive", ["all"])
