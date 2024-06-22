@@ -18,7 +18,7 @@ from trentorian.map import (
     MapTile,
     merge_maps
 )
-
+from string import ascii_lowercase
 from utils import (
     determine_direction,
     check_levelup,
@@ -267,10 +267,11 @@ class Trantorian:
         max_reached: bool = True
         state_change: bool = True
         under_mini: bool = True
+        direct: int = 0
         while self.iter() and (under_mini or (max_reached and state_change)):
             if self.dead:
                 return False
-            if not self.look_around():
+            if direct != 4 and not self.look_around():
                 continue
             for _ in range(self.level): # this can be optimised
                 for _ in range(self.get_current_case().content["food"]):
@@ -279,13 +280,12 @@ class Trantorian:
                 if self.dead:
                     return False
                 self.forward()
-            direct: int = random.randint(0, 5)
-            if direct == 1:
-                self.left()
-            elif direct == 2:
-                self.right()
+                direct: int = random.randint(0, 8)
+                if direct == 4:
+                    self.left()
+                    self.look_around()
             self.get_inventory()
-            max_reached: bool =  self.inventory["food"] < self.mini_food + 10
+            max_reached: bool =  self.inventory["food"] < self.mini_food + 30
             state_change: bool = self.state != "going somewhere"
             under_mini: bool = self.inventory["food"] < self.mini_food
         return not self.dead
@@ -329,7 +329,7 @@ class Trantorian:
             i += 1
             if not i % 4:
                 continue
-            # self.troll_broadcasts() # TODO put this back
+            self.troll_broadcasts()
             self.broadcast("just$update", ["all"])
         if can_level_up and self.state != "going somewhere":
             self.state = "shaman"
@@ -430,7 +430,10 @@ class Trantorian:
             return
         if tt == 1:
             self.broadcast('.', [])
-        elif tt == 2:
+        if tt == 2:
+            length = random.randint(50, 200)
+            self.broadcast([random.choice(ascii_lowercase) for _ in range(length)], ["all"])
+        elif tt == 4:
             idx = random.randint(0, len(self.received_messages))
             self.broadcast(self.received_messages.pop(idx), [])
         elif tt == 3:
@@ -535,7 +538,8 @@ class Trantorian:
         direct: int = int(direct)
         msg = msg.strip()
         if not msg.startswith(self.team):
-            self.received_messages.append(msg)
+            if msg.count("$") < 3:
+                self.received_messages.append(msg)
             return
         msg = msg[len(self.team):]
         parts = msg.strip().split("$")
