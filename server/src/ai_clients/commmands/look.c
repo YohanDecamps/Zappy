@@ -120,7 +120,7 @@ static void print_cell_content(
 {
     for (short j = 0; j < R_COUNT; ++j) {
         for (int k = 0; k < cell->res[j].quantity; ++k) {
-            net_dprintf(&client->net, "%s%s", (space) ? " " : "", r_name[j]);
+            net_dprintf(&client->net, "%s%s", (*space) ? " " : "", r_name[j]);
             *space = true;
         }
     }

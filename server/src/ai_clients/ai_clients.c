@@ -99,14 +99,14 @@ void move_ai_client(server_t *server, ai_client_t *client, int dir)
 }
 
 static ai_client_t *create_client_obj(
-    egg_t *egg, server_t *serv, int client_fd, char *team)
+    egg_t *egg, server_t *serv, net_client_t *net, char *team)
 {
     ai_client_t *client = calloc(1, sizeof *client);
 
     if (client == NULL)
         return OOM, NULL;
     strcpy(client->team, team);
-    client->net.fd = client_fd;
+    net_move_buffer(&client->net, net);
     client->dir = rand() % 4;
     client->pos = egg->pos;
     client->lvl = 1;
@@ -118,10 +118,11 @@ static ai_client_t *create_client_obj(
     return client;
 }
 
-int init_ai_client(server_t *serv, int client_fd, char *team, size_t egg_idx)
+int init_ai_client(
+    server_t *serv, net_client_t *net, char *team, size_t egg_idx)
 {
     egg_t *egg = serv->eggs.elements[egg_idx];
-    ai_client_t *client = create_client_obj(egg, serv, client_fd, team);
+    ai_client_t *client = create_client_obj(egg, serv, net, team);
 
     if (client == NULL)
         return RET_ERROR;

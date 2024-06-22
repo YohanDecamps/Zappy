@@ -172,7 +172,8 @@ int init_map(server_t *server, context_t *ctx);
 int iterate_waitlist(server_t *server);
 
 void iterate_ai_clients(server_t *server);
-int init_ai_client(server_t *serv, int client_fd, char *team, size_t egg_idx);
+int init_ai_client(
+    server_t *serv, net_client_t *net, char *team, size_t egg_idx);
 int remove_ai_client(server_t *server, size_t idx);
 void move_ai_client(server_t *server, ai_client_t *client, int dir);
 

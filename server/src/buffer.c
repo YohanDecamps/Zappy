@@ -34,6 +34,7 @@ char *net_getline(net_client_t *net)
 {
     char *ptr = NULL;
     char *newline = NULL;
+    size_t len = 0;
 
     if (net->buffer.str == NULL)
         return NULL;
@@ -43,7 +44,9 @@ char *net_getline(net_client_t *net)
     *newline = '\0';
     if (net->buffer.str != newline && *(newline - 1) == '\r')
         *(newline - 1) = '\0';
-    ptr = strndup(net->buffer.str, newline - ptr + 1);
+    len = newline - net->buffer.str + 1;
+    ptr = strndup(net->buffer.str, len);
+    net->buffer.size -= len;
     memmove(net->buffer.str, newline + 1, net->buffer.size);
     net->buffer.str[net->buffer.size] = '\0';
     return ptr;
@@ -119,4 +122,11 @@ ssize_t net_dprintf(net_client_t *net, const char *fmt, ...)
     ERR("Err writing to fd");
     net_disconnect(net);
     return ret;
+}
+
+void net_move_buffer(net_client_t *target, net_client_t *source)
+{
+    memcpy(target, source, sizeof *target);
+    memset(source, 0, sizeof *source);
+    source->fd = -1;
 }

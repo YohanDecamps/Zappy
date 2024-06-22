@@ -49,7 +49,7 @@ static void connect_ai_client(
         net_write(client, "ko\n", 3);
         return;
     }
-    if (init_ai_client(serv, client->fd, team, egg) == RET_VALID) {
+    if (init_ai_client(serv, client, team, egg) == RET_VALID) {
         client->fd = -1;
     } else {
         net_write(client, "ko\n", 3);
@@ -86,8 +86,7 @@ static void connect_gui_client(server_t *serv, net_client_t *client)
         net_disconnect(client);
         return;
     }
-    gui->net.fd = client->fd;
-    client->fd = -1;
+    net_move_buffer(&gui->net, client);
     serv->gui_client = gui;
     log_new_gui(serv);
 }
