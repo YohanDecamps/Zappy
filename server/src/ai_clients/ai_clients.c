@@ -161,7 +161,7 @@ void iterate_ai_clients(server_t *server)
         FD_SET(client->s_fd, &rfd);
         if (select(
                 client->s_fd + 1, &rfd, NULL, NULL,
-                &(struct timeval){0, 1000}) > 0 &&
+                &(struct timeval){0, 0}) > 0 &&
             FD_ISSET(client->s_fd, &rfd))
             handle_ai_client(server, client);
     }

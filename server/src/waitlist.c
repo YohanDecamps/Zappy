@@ -46,19 +46,19 @@ static void connect_ai_client(
 
     if (!team_valid(serv, team)) {
         ERR("team is invalid");
-        write(client_fd, "ko\n", 3);
+        (void)!write(client_fd, "ko\n", 3);
         return;
     }
     egg = get_egg(serv, team);
     if (count_team(serv, team) >= serv->ctx.client_nb || egg == -1) {
         ERR("team is full");
-        write(client_fd, "ko\n", 3);
+        (void)!write(client_fd, "ko\n", 3);
         return;
     }
     free(remove_elt_to_array(&serv->waitlist_fd, idx));
     if (init_ai_client(serv, client_fd, team, egg) == RET_ERROR) {
         OOM;
-        write(client_fd, "ko\n", 3);
+        (void)!write(client_fd, "ko\n", 3);
         close(client_fd);
     }
 }
@@ -81,14 +81,14 @@ static void connect_gui_client(server_t *serv, int idx, int client_fd)
 
     free(remove_elt_to_array(&serv->waitlist_fd, idx));
     if (serv->gui_client != NULL) {
-        write(client_fd, "ko\n", 3);
+        (void)!write(client_fd, "ko\n", 3);
         ERR("GUI client is already connected");
         close(client_fd);
         return;
     }
     gui = calloc(1, sizeof *serv->gui_client);
     if (gui == NULL) {
-        write(client_fd, "ko\n", 3);
+        (void)!write(client_fd, "ko\n", 3);
         OOM;
         close(client_fd);
         return;
@@ -120,16 +120,13 @@ static void handle_waitlist(server_t *serv, size_t i, int client_fd)
 int iterate_waitlist(server_t *server)
 {
     fd_set rfd;
-    struct timeval timeout;
     int client_fd = 0;
 
     for (size_t i = 0; i < server->waitlist_fd.nb_elements; ++i) {
         client_fd = *((int *)server->waitlist_fd.elements[i]);
-        timeout.tv_sec = 0;
-        timeout.tv_usec = 1000;
         FD_ZERO(&rfd);
         FD_SET(client_fd, &rfd);
-        if (select(client_fd + 1, &rfd, NULL, NULL, &timeout) < 0)
+        if (select(client_fd + 1, &rfd, NULL, NULL, &(struct timeval){0}) < 0)
             continue;
         if (FD_ISSET(client_fd, &rfd))
             handle_waitlist(server, i, client_fd);

@@ -10,6 +10,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "server.h"
+
 static bool is_separator(char c, char const *separator)
 {
     for (int i = 0; separator[i] != '\0'; i += 1) {
