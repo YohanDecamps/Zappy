@@ -14,7 +14,7 @@
 #include "ai_internal.h"
 #include "server.h"
 
-static const int QUEUE_SIZE = 20;
+static const int QUEUE_SIZE = 10;
 
 bool queue_add_cmd(server_t *server, ai_client_t *client, queued_cmd_t *qcmd)
 {
