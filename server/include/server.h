@@ -159,15 +159,22 @@ typedef struct server_s {
     precise_time_t last_refill;
     array_t incantations;
     precise_time_t now;
+    struct {
+        fd_set read;
+        fd_set write;
+        fd_set except;
+        int select;
+    } fd_set;
 } server_t;
 
-int server(UNUSED int argc, UNUSED char **argv);
+int server(int argc, char **argv);
 payload_t *get_cell_payload(server_t *serv, vector_t *pos, payload_t *payload);
 res_name_t get_ressource_type(char *name);
 egg_t *spawn_egg(server_t *server, char *team);
 size_t count_team(server_t *serv, char *team);
 void refill_map(server_t *server, context_t *ctx);
 int init_map(server_t *server, context_t *ctx);
+void read_buffers(server_t *serv);
 
 int iterate_waitlist(server_t *server);
 

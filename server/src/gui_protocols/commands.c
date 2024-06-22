@@ -85,6 +85,9 @@ int iterate_gui(server_t *server)
         return RET_ERROR;
     if (gui->net.fd < 0)
         return remove_gui(server);
+    if (server->fd_set.select > 0 &&
+        FD_ISSET(gui->net.fd, &server->fd_set.read))
+        net_read(&gui->net);
     for (; ITER_BUF(ptr, &gui->net);) {
         exec_gui_cmd(server, gui, ptr);
         free(ptr);

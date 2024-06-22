@@ -13,7 +13,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/select.h>
 #include <sys/socket.h>
 
 #include "arg_parse.h"
@@ -22,16 +21,26 @@
 #include "time.h"
 
 const double DENSITIES[R_COUNT] = {
-    [FOOD] = 0.5,      [LINEMATE] = 0.3, [DERAUMERE] = 0.15,
-    [SIBUR] = 0.1,     [MENDIANE] = 0.1, [PHIRAS] = 0.08,
-    [THYSTAME] = 0.05, [EGG] = 0,        [PLAYER] = 0,
+    [FOOD] = 0.5,
+    [LINEMATE] = 0.3,
+    [DERAUMERE] = 0.15,
+    [SIBUR] = 0.1,
+    [MENDIANE] = 0.1,
+    [PHIRAS] = 0.08,
+    [THYSTAME] = 0.05,
+    [EGG] = 0,
+    [PLAYER] = 0,
 };
 
 const char *const r_name[R_COUNT] = {
-    [FOOD] = "food",           [LINEMATE] = "linemate",
-    [DERAUMERE] = "deraumere", [SIBUR] = "sibur",
-    [MENDIANE] = "mendiane",   [PHIRAS] = "phiras",
-    [THYSTAME] = "thystame",   [EGG] = "egg",
+    [FOOD] = "food",
+    [LINEMATE] = "linemate",
+    [DERAUMERE] = "deraumere",
+    [SIBUR] = "sibur",
+    [MENDIANE] = "mendiane",
+    [PHIRAS] = "phiras",
+    [THYSTAME] = "thystame",
+    [EGG] = "egg",
     [PLAYER] = "player",
 };
 
@@ -105,82 +114,11 @@ static void add_client(server_t *serv, int fd)
 static int new_client(server_t *serv)
 {
     socklen_t len = sizeof serv->s_addr;
-    fd_set fdread;
-    fd_set fdwrite;
 
-    FD_ZERO(&fdread);
-    FD_ZERO(&fdwrite);
-    FD_SET(serv->s_fd, &fdread);
-    FD_SET(serv->s_fd, &fdwrite);
-    if (select(
-            serv->s_fd + 1, &fdread, &fdwrite, NULL, &(struct timeval){0}) <=
-        0)
-        return -1;
-    return accept(serv->s_fd, (struct sockaddr *)&serv->s_addr, &len);
-}
-
-static void read_buffers(server_t *serv)
-{
-    fd_set rfd;
-    net_client_t *wt_client = NULL;
-
-    for (size_t i = 0; i < serv->waitlist_fd.nb_elements; ++i) {
-        wt_client = serv->waitlist_fd.elements[i];
-        if (wt_client == NULL) {
-            remove_elt_to_array(&serv->waitlist_fd, i);
-            i -= 1;
-            continue;
-        }
-        if (wt_client->fd < 0) {
-            net_disconnect(wt_client);
-            free(remove_elt_to_array(&serv->waitlist_fd, i));
-            i -= 1;
-            continue;
-        }
-        FD_ZERO(&rfd);
-        FD_SET(wt_client->fd, &rfd);
-        if (select(wt_client->fd + 1, &rfd, NULL, NULL, &(struct timeval){0}) >
-                0 &&
-            FD_ISSET(wt_client->fd, &rfd))
-            net_read(wt_client);
-    }
-
-    ai_client_t *ai_client = NULL;
-    for (size_t i = 0; i < serv->ai_clients.nb_elements; ++i) {
-        ai_client = serv->ai_clients.elements[i];
-        if (ai_client == NULL) {
-            remove_elt_to_array(&serv->ai_clients, i);
-            i -= 1;
-            continue;
-        }
-        if (ai_client->net.fd < 0) {
-            remove_ai_client(serv, i);
-            i -= 1;
-            continue;
-        }
-        FD_ZERO(&rfd);
-        FD_SET(ai_client->net.fd, &rfd);
-        if (select(
-                ai_client->net.fd + 1, &rfd, NULL, NULL,
-                &(struct timeval){0}) > 0 &&
-            FD_ISSET(ai_client->net.fd, &rfd))
-            net_read(&ai_client->net);
-    }
-
-    gui_client_t *gui_client = serv->gui_client;
-    if (gui_client == NULL)
-        return;
-    if (gui_client->net.fd < 0) {
-        remove_gui(serv);
-        return;
-    }
-    FD_ZERO(&rfd);
-    FD_SET(gui_client->net.fd, &rfd);
-    if (select(
-            gui_client->net.fd + 1, &rfd, NULL, NULL,
-            &(struct timeval){0}) > 0 &&
-        FD_ISSET(gui_client->net.fd, &rfd))
-        net_read(&gui_client->net);
+    if (serv->fd >= 0 && serv->fd_set.select > 0 &&
+        FD_ISSET(serv->s_fd, &serv->fd_set.read))
+        return accept(serv->s_fd, (struct sockaddr *)&serv->s_addr, &len);
+    return -1;
 }
 
 int server(int argc, char **argv)
@@ -195,14 +133,14 @@ int server(int argc, char **argv)
         return RET_ERROR;
     for (int fd = -1;; fd = -1) {
         server.now = gettime();
+        read_buffers(&server);
         fd = new_client(&server);
         if (fd != -1)
             add_client(&server, fd);
         refill_map(&server, &server.ctx);
-        read_buffers(&server);
-        iterate_waitlist(&server);
         iterate_ai_clients(&server);
         iterate_gui(&server);
+        iterate_waitlist(&server);
     }
     // close_server(&serv); // gui_msg_seg
     return RET_VALID;

@@ -207,6 +207,9 @@ void iterate_ai_clients(server_t *server)
             remove_ai_client(server, i), i -= 1;
             continue;
         }
+        if (server->fd_set.select > 0 &&
+            FD_ISSET(ai->net.fd, &server->fd_set.read))
+            net_read(&ai->net);
         for (; ITER_BUF(ptr, &ai->net);) {
             exec_ai_cmd(server, ai, ptr);
             free(ptr);

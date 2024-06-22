@@ -112,6 +112,9 @@ int iterate_waitlist(server_t *server)
             i -= 1;
             continue;
         }
+        if (server->fd_set.select > 0 &&
+            FD_ISSET(client->fd, &server->fd_set.read))
+            net_read(client);
         for (; ITER_BUF(ptr, client);) {
             exec_wait_cmd(server, client, ptr);
             free(ptr);
