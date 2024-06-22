@@ -33,6 +33,11 @@
 #define R_COUNT 9
 #define CELL(s, x, y) (&s->map[IDX(x, y, s->ctx.width, s->ctx.height)])
 
+// This should be fine as this is long and it is 2024
+#define GTIME(t) ((double)(t)->tv_sec + (double)(t)->tv_usec / 1000000)
+
+typedef double precise_time_t;
+
 enum {
     RET_VALID = 0,
     RET_ERROR = 84,
@@ -129,14 +134,14 @@ typedef struct ai_client_s {
     int id;
     queued_cmd_t *q_cmds;
     size_t q_size;
-    time_t last_cmd;
-    time_t last_fed;
+    precise_time_t last_cmd;
+    precise_time_t last_fed;
     bool busy;
 } ai_client_t;
 
 typedef struct {
     array_t players;
-    time_t time;
+    precise_time_t time;
     int lvl;
     int leader;
 } incantation_t;
@@ -165,8 +170,9 @@ typedef struct server_s {
     int ai_id;
     int egg_id;
     ressource_t map_res[R_COUNT];
-    time_t last_refill;
+    precise_time_t last_refill;
     array_t incantations;
+    precise_time_t now;
 } server_t;
 
 int server(UNUSED int argc, UNUSED char **argv);
@@ -174,6 +180,9 @@ payload_t *get_cell_payload(server_t *serv, vector_t *pos, payload_t *payload);
 res_name_t get_ressource_type(char *name);
 egg_t *spawn_egg(server_t *server, char *team);
 size_t count_team(server_t *serv, char *team);
+void refill_map(server_t *server, context_t *ctx);
+int init_map(server_t *server, context_t *ctx);
+int iterate_waitlist(server_t *server);
 
 ATTR(format(printf, 2, 3))
 ssize_t ai_dprintf(ai_client_t *client, const char *fmt, ...);

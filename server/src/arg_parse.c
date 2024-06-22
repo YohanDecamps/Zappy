@@ -21,8 +21,8 @@ static char const *const flags[] = {
 UNUSED static void debug_ctx(context_t *ctx)
 {
     printf("Port: %d\n", ctx->port);
-    printf("Width: %ld\n", ctx->width);
-    printf("Height: %ld\n", ctx->height);
+    printf("Width: %zu\n", ctx->width);
+    printf("Height: %zu\n", ctx->height);
     for (size_t i = 0; i < ctx->names.nb_elements; ++i)
         printf("%s\n", (char *)ctx->names.elements[i]);
 }
@@ -44,12 +44,12 @@ int arg_parse(int argc, char *argv[], context_t *ctx)
     if (argc < 13 || check_flags(array, argv) != RET_VALID)
         return RET_ERROR;
     errno = 0;
-    ctx->port = (int)strtol(argv[2], NULL, 10);
-    ctx->width = strtol(argv[4], NULL, 10);
-    ctx->height = strtol(argv[6], NULL, 10);
-    ctx->client_nb = strtol(argv[argc - 3 - adjust], NULL, 10);
+    ctx->port = (short)strtol(argv[2], NULL, 10);
+    ctx->width = strtoul(argv[4], NULL, 10);
+    ctx->height = strtoul(argv[6], NULL, 10);
+    ctx->client_nb = strtoul(argv[argc - 3 - adjust], NULL, 10);
     ctx->freq = strtol(argv[argc - 1 - adjust], NULL, 10);
-    if (errno != 0)
+    if (errno != 0 || ctx->height > 30 || ctx->width > 30)
         return RET_ERROR;
     for (int i = 8; i < array[4]; ++i)
         if (add_elt_to_array(&ctx->names, argv[i]) == RET_ERROR)

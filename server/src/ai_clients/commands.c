@@ -19,18 +19,18 @@
 // so we can get the size at compile time.
 // It needs to be sorted for the bsearch function.
 static const struct ai_cmd_s commands[] = {
-    {"Broadcast", ai_cmd_broadcast, 7},
-    {"Connect_nbr", ai_cmd_connect_nbr, 0},
-    {"Eject", ai_cmd_eject, 7},
-    {"Fork", ai_cmd_fork, 0},
-    {"Forward", ai_cmd_forward, 7},
-    {"Incantation", ai_cmd_incantation, 0},
-    {"Inventory", ai_cmd_inventory, 1},
-    {"Left", ai_cmd_left, 7},
-    {"Look", ai_cmd_look, 7},
-    {"Right", ai_cmd_right, 7},
-    {"Set", ai_cmd_set, 7},
-    {"Take", ai_cmd_take, 7},
+    {"Broadcast", ai_cmd_broadcast, 7.},
+    {"Connect_nbr", ai_cmd_connect_nbr, 0.},
+    {"Eject", ai_cmd_eject, 7.},
+    {"Fork", ai_cmd_fork, 0.},
+    {"Forward", ai_cmd_forward, 7.},
+    {"Incantation", ai_cmd_incantation, 0.},
+    {"Inventory", ai_cmd_inventory, 1.},
+    {"Left", ai_cmd_left, 7.},
+    {"Look", ai_cmd_look, 7.},
+    {"Right", ai_cmd_right, 7.},
+    {"Set", ai_cmd_set, 7.},
+    {"Take", ai_cmd_take, 7.},
 };
 
 const struct ai_cmd_s *const AI_CLIENT_COMMANDS = commands;
@@ -70,7 +70,8 @@ static void exec_ai_cmd(server_t *server, ai_client_t *client)
         return;
     }
     queue_add_cmd(
-        client, &(queued_cmd_t){cmd->func, cmd->time, strdup(content)});
+        server, client,
+        &(queued_cmd_t){cmd->func, cmd->time, strdup(content)});
 }
 
 static bool process_ai_cmd(server_t *server, ai_client_t *client)

@@ -133,7 +133,7 @@ static incantation_t *count_players(
     if (!inc)
         return NULL;
     inc->lvl = client->lvl;
-    inc->time = time(NULL);
+    inc->time = serv->now;
     if (needed_players - 1 > (int)inc->players.nb_elements)
         return free(array_destructor(&inc->players, free)),
             ERRF("l %d: too few clients", inc->lvl), NULL;

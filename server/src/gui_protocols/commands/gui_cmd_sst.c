@@ -12,11 +12,14 @@
 
 void gui_cmd_sst(server_t *server, gui_client_t *client, char *args)
 {
-    long freq = atol(args);
+    long freq = 0;
 
-    if (client == NULL)
+    ERR("sst");
+    if (client == NULL || args == NULL)
         return;
-    if (freq == 0) {
+    freq = strtol(args, NULL, 10);
+    if (freq <= 0) {
+        ERR("invalid freq");
         gui_dprintf(client, "ko\n");
         return;
     }

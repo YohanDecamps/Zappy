@@ -57,7 +57,7 @@ static void exec_gui_cmd(server_t *server, gui_client_t *client)
     }
     cmd = get_gui_cmd(client->buffer.str);
     if (cmd == NULL || cmd->func == NULL) {
-        gui_write(client, "ko\n", 3);
+        ERR("cmd not found"), gui_write(client, "ko\n", 3);
         return;
     }
     cmd->func(server, client, content);
@@ -108,21 +108,21 @@ static void handle_gui(server_t *server)
     const size_t bufsiz = 512;
     ssize_t bytes_read = 0;
     char *ptr = NULL;
-    gui_client_t *client = server->gui_client;
+    gui_client_t *gui = server->gui_client;
 
-    if (resize_buffer(client, bufsiz) == RET_ERROR) {
-        gui_write(client, "ko\n", 3);
+    if (resize_buffer(gui, bufsiz) == RET_ERROR) {
+        ERR("resize_buffer"), gui_write(gui, "ko\n", 3);
         return;
     }
-    ptr = client->buffer.str + client->buffer.size;
-    bytes_read = read(client->s_fd, ptr, bufsiz);
-    if (bytes_read <= 0) {
-        remove_gui(server);
+    ptr = gui->buffer.str + gui->buffer.size;
+    bytes_read = read(gui->s_fd, ptr, bufsiz);
+    if (bytes_read < 0) {
+        ERR("read"), remove_gui(server);
         return;
     }
-    client->buffer.size += bytes_read;
+    gui->buffer.size += bytes_read;
     ptr[bytes_read] = '\0';
-    for (; process_gui_cmd(server, client);)
+    for (; process_gui_cmd(server, gui);)
         ;
 }
 
@@ -134,6 +134,7 @@ int remove_gui(server_t *server)
         return RET_ERROR;
     if (gui->s_fd > 0)
         close(gui->s_fd);
+    free(gui->buffer.str);
     free(gui);
     server->gui_client = NULL;
     return RET_VALID;
@@ -151,8 +152,8 @@ int iterate_gui(server_t *server)
     FD_ZERO(&rfd);
     FD_SET(gui->s_fd, &rfd);
     if (select(
-            server->s_fd + 1, &rfd, NULL, NULL, &(struct timeval){0, 1000}) >
-            0 &&
+            gui->s_fd + 1, &rfd, NULL, NULL,
+            &(struct timeval){0, 1000}) > 0 &&
         FD_ISSET(gui->s_fd, &rfd))
         handle_gui(server);
     return RET_VALID;

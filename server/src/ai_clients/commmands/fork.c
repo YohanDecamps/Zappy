@@ -21,6 +21,6 @@ static void after_fork(
 
 void ai_cmd_fork(server_t *server, ai_client_t *client, UNUSED char *args)
 {
-    queue_add_cmd(client, &(queued_cmd_t){after_fork, 42, NULL});
+    queue_add_cmd(server, client, &(queued_cmd_t){after_fork, 42, NULL});
     gui_cmd_pfk(server, server->gui_client, client->id);
 }

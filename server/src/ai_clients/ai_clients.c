@@ -12,7 +12,6 @@
 #include <time.h>
 
 #include "ai_internal.h"
-#include "bits/types/struct_timeval.h"
 #include "gui_protocols/commands/commands.h"
 #include "server.h"
 
@@ -109,18 +108,18 @@ int remove_ai_client(server_t *server, size_t idx)
 
 static bool starve_to_death(server_t *server, ai_client_t *ai)
 {
-    time_t now = time(NULL);
     char buff[256] = {0};
 
     if (ai->res[FOOD].quantity <= 0)
         return ERR("Starved to death"), true;
     if (ai->last_fed == 0) {
-        ai->last_fed = now;
+        ai->last_fed = server->now;
         return false;
     }
-    if (server->ctx.freq >= 0 && now - ai->last_fed > 126 / server->ctx.freq) {
+    if (server->ctx.freq >= 0 &&
+        server->now - ai->last_fed > 126. / (double)server->ctx.freq) {
         ai->res[FOOD].quantity -= 1;
-        ai->last_fed = now;
+        ai->last_fed = server->now;
         sprintf(buff, "%d", ai->id);
         gui_cmd_pin(server, server->gui_client, buff);
     }
@@ -136,7 +135,7 @@ static void summon_incantations(server_t *server)
     for (size_t i = 0; i < server->incantations.nb_elements; ++i) {
         inc = server->incantations.elements[i];
         if (server->ctx.freq >= 0 &&
-            time(NULL) - inc->time > 300 / server->ctx.freq) {
+            server->now - inc->time > 300. / (double)server->ctx.freq) {
             ai_client_incantation_end(server, inc);
             array_destructor(&inc->players, free);
             free(remove_elt_to_array(&server->incantations, i));
