@@ -130,7 +130,7 @@ class Trantorian:
         self.consider_dead: float = (self.known_map.width + self.known_map.height) * 8 + 400
         self.ticks: int = 0
         self.last_broadcast: int = 0
-        self.last_birth: int = 0
+        self.last_birth: int = -80 # so it can do an incant at the spawn
         self.nbr_tests_ticks: int = 0
         self.tick_time: float = 0
 
@@ -371,11 +371,11 @@ class Trantorian:
         self.number_of_ritual_ready = 0
         while self.iter() and self.state == "beacon":
             self.kill_others()
-            if not all(e in self.others for e in receivers):
-                self.state = "wander"
-                return
+            # if not all(e in self.others for e in receivers):
+                # self.state = "wander"
+                # return
             self.broadcast(MessageTypeParser().serialize(MessageType.BEACON, self), receivers)
-            if self.number_of_ritual_ready >= LEVELS[self.level + 1][0] - 1:
+            if self.number_of_ritual_ready >= 5:#LEVELS[self.level + 1][0] - 1:
                 self.dprint("we are ready", receivers)
                 self.state = "ready"
         return
@@ -757,7 +757,7 @@ class Trantorian:
             return False
         return True
 
-    def asexual_multiplication(self, queue: Queue, place: str) -> bool:
+    def asexual_multiplication(self, queue: Queue, place: str='no-info') -> bool:
         """selffucking for a new trantorian
         time limit : 42/f
 

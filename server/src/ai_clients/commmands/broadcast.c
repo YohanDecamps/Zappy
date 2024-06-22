@@ -59,10 +59,26 @@ void ai_cmd_broadcast(server_t *server, ai_client_t *client, char *args)
         cur = server->ai_clients.elements[i];
         if (cur->s_fd < 0 || cur == client)
             continue;
-        dir = (client->pos.x == cur->pos.x && client->pos.y == cur->pos.y)
-            ? 0 : abs((int)(conv_table[cur->dir] - compute_dir(
-            client->pos, cur->pos,
-            (int[2]){(int)server->ctx.width, (int)server->ctx.height}))) + 1;
+
+
+
+        if (client->pos.x == cur->pos.x && client->pos.y == cur->pos.y) {
+            dir = 0;
+        } else {
+            int current_dir = conv_table[cur->dir];
+            int computed_dir = compute_dir(
+                client->pos,
+                cur->pos,
+                (int[2]){
+                    (int)server->ctx.width,
+                    (int)server->ctx.height
+                }
+            );
+            dir = computed_dir - current_dir;
+            if (dir < 0)
+                dir += 7;
+            dir += 1;
+        }
         ai_dprintf(cur, "message %d, %s\n", dir, args);
     }
     ai_write(client, "ok\n", 3);
