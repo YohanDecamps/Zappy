@@ -10,6 +10,8 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
+#define ITER_BUF(ptr, b) ptr = net_getline(b), ptr != NULL
+
 struct buffer_s {
     char *str;
     size_t size;

@@ -207,10 +207,7 @@ void iterate_ai_clients(server_t *server)
             remove_ai_client(server, i), i -= 1;
             continue;
         }
-        for (;;) {
-            ptr = net_getline(&ai->net);
-            if (ptr == NULL)
-                break;
+        for (; ITER_BUF(ptr, &ai->net);) {
             exec_ai_cmd(server, ai, ptr);
             free(ptr);
         }

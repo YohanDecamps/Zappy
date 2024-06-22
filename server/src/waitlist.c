@@ -33,8 +33,7 @@ static long get_egg(server_t *serv, const char *team)
     return -1;
 }
 
-static void connect_ai_client(
-    server_t *serv, net_client_t *client, char *team)
+static void connect_ai_client(server_t *serv, net_client_t *client, char *team)
 {
     long egg = -1;
 
@@ -111,12 +110,9 @@ int iterate_waitlist(server_t *server)
             net_disconnect(client);
             free(remove_elt_to_array(&server->waitlist_fd, i));
             i -= 1;
-            continue;;
+            continue;
         }
-        for (;;) {
-            ptr = net_getline(client);
-            if (ptr == NULL)
-                break;
+        for (; ITER_BUF(ptr, client);) {
             exec_wait_cmd(server, client, ptr);
             free(ptr);
         }

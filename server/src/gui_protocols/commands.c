@@ -85,10 +85,7 @@ int iterate_gui(server_t *server)
         return RET_ERROR;
     if (gui->net.fd < 0)
         return remove_gui(server);
-    for (;;) {
-        ptr = net_getline(&gui->net);
-        if (ptr == NULL)
-            break;
+    for (; ITER_BUF(ptr, &gui->net);) {
         exec_gui_cmd(server, gui, ptr);
         free(ptr);
     }
