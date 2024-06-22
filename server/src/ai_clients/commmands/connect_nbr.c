@@ -5,15 +5,13 @@
 ** connect_nbr
 */
 
-#include <stdio.h>
-
 #include "commands.h"
 #include "server.h"
 
 void ai_cmd_connect_nbr(
     server_t *server, ai_client_t *client, UNUSED char *args)
 {
-    ai_dprintf(
-        client, "%zu\n",
+    net_dprintf(
+        &client->net, "%zu\n",
         server->ctx.client_nb - count_team(server, client->team));
 }

@@ -189,7 +189,7 @@ static void log_promoted_players(server_t *server, incantation_t *inc)
         read = get_client_by_id(server, *(int *)inc->players.elements[i]);
         read->busy = false;
         read->lvl += 1;
-        ai_dprintf(read, "Current level: %d\n", read->lvl);
+        net_dprintf(&read->net, "Current level: %d\n", read->lvl);
         sprintf(buffer, "%d", read->id);
         gui_cmd_plv(server, server->gui_client, buffer);
     }
@@ -208,7 +208,7 @@ void ai_client_incantation_end(server_t *server, incantation_t *inc)
     cell = CELL(server, leader->pos.x, leader->pos.y);
     if (!check_end_incantation(server, cell, inc)) {
         gui_cmd_pie(server, server->gui_client, leader->pos, 0);
-        ai_dprintf(leader, "ko\n");
+        net_dprintf(&leader->net, "ko\n");
         return;
     }
     ERRF("level passed: %d", inc->lvl + 1);
@@ -229,7 +229,7 @@ void ai_cmd_incantation(
 
     if (inc == NULL ||
         add_elt_to_array(&server->incantations, inc) == RET_ERROR) {
-        ai_write(client, "ko\n", 3);
+        net_write(&client->net, "ko\n", 3);
         return;
     }
     ptr += sprintf(ptr, "%d %d %d", cell->pos.x, cell->pos.y, client->lvl);
@@ -239,5 +239,5 @@ void ai_cmd_incantation(
         ptr += sprintf(ptr, " %d", read->id);
     }
     gui_cmd_pic(server, server->gui_client, buffer);
-    ai_dprintf(client, "Elevation underway\n");
+    net_dprintf(&client->net, "Elevation underway\n");
 }

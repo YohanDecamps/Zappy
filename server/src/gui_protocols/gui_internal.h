@@ -18,5 +18,3 @@ struct gui_cmd_s {
 
 extern const struct gui_cmd_s *const GUI_CLIENT_COMMANDS;
 extern const size_t GUI_CLIENT_COMMANDS_LEN;
-
-int remove_gui(server_t *server);

@@ -22,26 +22,16 @@
 #include "time.h"
 
 const double DENSITIES[R_COUNT] = {
-    [FOOD] = 0.5,
-    [LINEMATE] = 0.3,
-    [DERAUMERE] = 0.15,
-    [SIBUR] = 0.1,
-    [MENDIANE] = 0.1,
-    [PHIRAS] = 0.08,
-    [THYSTAME] = 0.05,
-    [EGG] = 0,
-    [PLAYER] = 0,
+    [FOOD] = 0.5,      [LINEMATE] = 0.3, [DERAUMERE] = 0.15,
+    [SIBUR] = 0.1,     [MENDIANE] = 0.1, [PHIRAS] = 0.08,
+    [THYSTAME] = 0.05, [EGG] = 0,        [PLAYER] = 0,
 };
 
 const char *const r_name[R_COUNT] = {
-    [FOOD] = "food",
-    [LINEMATE] = "linemate",
-    [DERAUMERE] = "deraumere",
-    [SIBUR] = "sibur",
-    [MENDIANE] = "mendiane",
-    [PHIRAS] = "phiras",
-    [THYSTAME] = "thystame",
-    [EGG] = "egg",
+    [FOOD] = "food",           [LINEMATE] = "linemate",
+    [DERAUMERE] = "deraumere", [SIBUR] = "sibur",
+    [MENDIANE] = "mendiane",   [PHIRAS] = "phiras",
+    [THYSTAME] = "thystame",   [EGG] = "egg",
     [PLAYER] = "player",
 };
 
@@ -87,7 +77,7 @@ size_t count_team(server_t *serv, char *team)
 
     for (size_t i = 0; i < serv->ai_clients.nb_elements; ++i) {
         ai_client = (ai_client_t *)serv->ai_clients.elements[i];
-        if (ai_client->s_fd > 0 && strcmp(team, ai_client->team) == 0)
+        if (ai_client->net.fd > 0 && strcmp(team, ai_client->team) == 0)
             count += 1;
     }
     return count;
@@ -95,21 +85,21 @@ size_t count_team(server_t *serv, char *team)
 
 static void add_client(server_t *serv, int fd)
 {
-    int *fd_ptr = malloc(sizeof(int));
+    net_client_t *client = calloc(1, sizeof *client);
 
-    if (!fd_ptr) {
+    if (!client) {
         OOM;
-        (void)!write(fd, "ko\n", 3);
         close(fd);
         return;
     }
-    *fd_ptr = fd;
-    if (add_elt_to_array(&serv->waitlist_fd, fd_ptr) == RET_ERROR) {
-        (void)!write(fd, "ko\n", 3);
-        close(fd);
+    client->fd = fd;
+    if (add_elt_to_array(&serv->waitlist_fd, client) == RET_ERROR) {
+        net_write(client, "ko\n", 3);
+        net_disconnect(client);
+        free(client);
         return;
     }
-    dprintf(fd, "WELCOME\n");
+    net_dprintf(client, "WELCOME\n");
 }
 
 static int new_client(server_t *serv)
@@ -129,6 +119,70 @@ static int new_client(server_t *serv)
     return accept(serv->s_fd, (struct sockaddr *)&serv->s_addr, &len);
 }
 
+static void read_buffers(server_t *serv)
+{
+    fd_set rfd;
+    net_client_t *wt_client = NULL;
+
+    for (size_t i = 0; i < serv->waitlist_fd.nb_elements; ++i) {
+        wt_client = serv->waitlist_fd.elements[i];
+        if (wt_client == NULL) {
+            remove_elt_to_array(&serv->waitlist_fd, i);
+            i -= 1;
+            continue;
+        }
+        if (wt_client->fd < 0) {
+            net_disconnect(wt_client);
+            free(remove_elt_to_array(&serv->waitlist_fd, i));
+            i -= 1;
+            continue;
+        }
+        FD_ZERO(&rfd);
+        FD_SET(wt_client->fd, &rfd);
+        if (select(wt_client->fd + 1, &rfd, NULL, NULL, &(struct timeval){0}) >
+                0 &&
+            FD_ISSET(wt_client->fd, &rfd))
+            net_read(wt_client);
+    }
+
+    ai_client_t *ai_client = NULL;
+    for (size_t i = 0; i < serv->ai_clients.nb_elements; ++i) {
+        ai_client = serv->ai_clients.elements[i];
+        if (ai_client == NULL) {
+            remove_elt_to_array(&serv->ai_clients, i);
+            i -= 1;
+            continue;
+        }
+        if (ai_client->net.fd < 0) {
+            remove_ai_client(serv, i);
+            i -= 1;
+            continue;
+        }
+        FD_ZERO(&rfd);
+        FD_SET(ai_client->net.fd, &rfd);
+        if (select(
+                ai_client->net.fd + 1, &rfd, NULL, NULL,
+                &(struct timeval){0}) > 0 &&
+            FD_ISSET(ai_client->net.fd, &rfd))
+            net_read(&ai_client->net);
+    }
+
+    gui_client_t *gui_client = serv->gui_client;
+    if (gui_client == NULL)
+        return;
+    if (gui_client->net.fd < 0) {
+        remove_gui(serv);
+        return;
+    }
+    FD_ZERO(&rfd);
+    FD_SET(gui_client->net.fd, &rfd);
+    if (select(
+            gui_client->net.fd + 1, &rfd, NULL, NULL,
+            &(struct timeval){0}) > 0 &&
+        FD_ISSET(gui_client->net.fd, &rfd))
+        net_read(&gui_client->net);
+}
+
 int server(int argc, char **argv)
 {
     server_t server = {0};
@@ -145,6 +199,7 @@ int server(int argc, char **argv)
         if (fd != -1)
             add_client(&server, fd);
         refill_map(&server, &server.ctx);
+        read_buffers(&server);
         iterate_waitlist(&server);
         iterate_ai_clients(&server);
         iterate_gui(&server);

@@ -10,9 +10,9 @@
 
 #include "commands.h"
 
-void gui_cmd_seg(UNUSED server_t *server, gui_client_t *client, char *args)
+void gui_cmd_seg(UNUSED server_t *server, gui_client_t *gui, char *args)
 {
-    if (!args || client == NULL)
+    if (args == NULL || gui == NULL)
         return;
-    gui_dprintf(client, "seg %s\n", args);
+    net_dprintf(&gui->net, "seg %s\n", args);
 }

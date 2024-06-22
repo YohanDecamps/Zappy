@@ -10,9 +10,9 @@
 
 #include "commands.h"
 
-void gui_cmd_pfk(UNUSED server_t *server, gui_client_t *client, int ai_id)
+void gui_cmd_pfk(UNUSED server_t *server, gui_client_t *gui, int ai_id)
 {
-    if (client == NULL)
+    if (gui == NULL)
         return;
-    gui_dprintf(client, "pfk %d\n", ai_id);
+    net_dprintf(&gui->net, "pfk %d\n", ai_id);
 }

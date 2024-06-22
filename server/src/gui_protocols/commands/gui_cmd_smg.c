@@ -10,9 +10,9 @@
 
 #include "commands.h"
 
-void gui_cmd_smg(UNUSED server_t *server, gui_client_t *client, char *args)
+void gui_cmd_smg(UNUSED server_t *server, gui_client_t *gui, char *args)
 {
-    if (client == NULL || args == NULL)
+    if (gui == NULL || args == NULL)
         return;
-    gui_dprintf(client, "smg %s\n", args);
+    net_dprintf(&gui->net, "smg %s\n", args);
 }

@@ -10,19 +10,18 @@
 
 #include "commands.h"
 
-void gui_cmd_sst(server_t *server, gui_client_t *client, char *args)
+void gui_cmd_sst(server_t *server, gui_client_t *gui, char *args)
 {
     long freq = 0;
 
-    ERR("sst");
-    if (client == NULL || args == NULL)
+    if (gui == NULL || args == NULL)
         return;
     freq = strtol(args, NULL, 10);
     if (freq <= 0) {
         ERR("invalid freq");
-        gui_dprintf(client, "ko\n");
+        net_dprintf(&gui->net, "ko\n");
         return;
     }
     server->ctx.freq = freq;
-    gui_dprintf(client, "sst %ld\n", freq);
+    net_dprintf(&gui->net, "sst %ld\n", freq);
 }

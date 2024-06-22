@@ -10,10 +10,10 @@
 #include "commands.h"
 #include "server.h"
 
-void gui_cmd_msz(server_t *server, gui_client_t *client, UNUSED char *args)
+void gui_cmd_msz(server_t *server, gui_client_t *gui, UNUSED char *args)
 {
-    if (client == NULL)
+    if (gui == NULL)
         return;
-    gui_dprintf(
-        client, "msz %ld %ld\n", server->ctx.width, server->ctx.height);
+    net_dprintf(
+        &gui->net, "msz %ld %ld\n", server->ctx.width, server->ctx.height);
 }

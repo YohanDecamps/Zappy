@@ -11,11 +11,11 @@
 void ai_cmd_inventory(
     UNUSED server_t *server, ai_client_t *client, UNUSED char *args)
 {
-    ai_dprintf(client, "[");
+    net_dprintf(&client->net, "[");
     for (int i = FOOD; i < THYSTAME; ++i) {
-        ai_dprintf(
-            client, "%s%s %d", i ? ", " : "", r_name[i],
+        net_dprintf(
+            &client->net, "%s%s %d", i ? ", " : "", r_name[i],
             client->res[i].quantity);
     }
-    ai_dprintf(client, "]\n");
+    net_dprintf(&client->net, "]\n");
 }

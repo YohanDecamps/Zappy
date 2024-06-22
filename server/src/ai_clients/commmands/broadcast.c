@@ -57,14 +57,14 @@ void ai_cmd_broadcast(server_t *server, ai_client_t *client, char *args)
 
     for (size_t i = 0; i < server->ai_clients.nb_elements; ++i) {
         cur = server->ai_clients.elements[i];
-        if (cur->s_fd < 0 || cur == client)
+        if (cur->net.fd < 0 || cur == client)
             continue;
         dir = (client->pos.x == cur->pos.x && client->pos.y == cur->pos.y)
             ? 0 : abs((int)(conv_table[cur->dir] - compute_dir(
             client->pos, cur->pos,
             (int[2]){(int)server->ctx.width, (int)server->ctx.height}))) + 1;
-        ai_dprintf(cur, "message %d, %s\n", dir, args);
+        net_dprintf(&cur->net, "message %d, %s\n", dir, args);
     }
-    ai_write(client, "ok\n", 3);
+    net_write(&client->net, "ok\n", 3);
     gui_cmd_pbc(server, server->gui_client, client->id, args);
 }

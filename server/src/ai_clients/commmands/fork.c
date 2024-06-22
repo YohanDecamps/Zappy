@@ -15,7 +15,7 @@ static void after_fork(
 {
     egg_t *egg = spawn_egg(server, client->team);
 
-    ai_write(client, "ok\n", 3);
+    net_write(&client->net, "ok\n", 3);
     gui_cmd_enw(server, server->gui_client, egg, client->id);
 }
 

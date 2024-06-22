@@ -12,9 +12,9 @@
 #include "server.h"
 
 void gui_cmd_pbc(
-    UNUSED server_t *server, gui_client_t *client, int ai_id, char *m)
+    UNUSED server_t *server, gui_client_t *gui, int ai_id, char *m)
 {
-    if (client == NULL)
+    if (gui == NULL)
         return;
-    gui_dprintf(client, "pbc %d %s\n", ai_id, m);
+    net_dprintf(&gui->net, "pbc %d %s\n", ai_id, m);
 }

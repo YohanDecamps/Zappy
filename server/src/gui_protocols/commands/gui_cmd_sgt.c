@@ -10,9 +10,9 @@
 
 #include "commands.h"
 
-void gui_cmd_sgt(server_t *server, gui_client_t *client, UNUSED char *args)
+void gui_cmd_sgt(server_t *server, gui_client_t *gui, UNUSED char *args)
 {
-    if (client == NULL)
+    if (gui == NULL)
         return;
-    gui_dprintf(client, "sgt %ld\n", server->ctx.freq);
+    net_dprintf(&gui->net, "sgt %ld\n", server->ctx.freq);
 }

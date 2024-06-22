@@ -54,7 +54,7 @@ int init_map(server_t *server, context_t *ctx)
 
 egg_t *spawn_egg(server_t *server, char *team)
 {
-    egg_t *egg = malloc(sizeof *egg);
+    egg_t *egg = calloc(1, sizeof *egg);
 
     if (!egg)
         return OOM, NULL;
