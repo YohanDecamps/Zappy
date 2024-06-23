@@ -1,7 +1,7 @@
-from trentorian.trentorian import Trantorian
-from parser.virtual.parser import IParser
+from trentorian import Trantorian
+from parser.virtual import IParser
 from utils import determine_direction
-from parser.concrete.message_type_parser import MessageType
+from .message_type_parser import MessageType
 
 from warnings import warn
 from enum import IntEnum

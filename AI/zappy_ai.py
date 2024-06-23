@@ -2,8 +2,8 @@
 """ Main """
 from time import sleep
 from multiprocessing import Process, Queue
-from args_handling.args_handling import get_args
-from trentorian.trentorian import Trantorian
+from args_handling import get_args
+from trentorian import Trantorian
 
 
 def burry_dead(pop: list[Process]) -> list[Process]:
@@ -48,7 +48,7 @@ def main(host: str, port: int, team: str):
             threads[-1].start()
     return
 
-if __name__ == "__main__":
+def main_cli():
     args = get_args()
 
     # print(args.p)
@@ -60,3 +60,6 @@ if __name__ == "__main__":
     except RuntimeError as err:
         print(err.args[0])
         exit(84)
+
+if __name__ == "__main__":
+    main_cli()

@@ -8,11 +8,10 @@ import random
 from warnings import warn
 
 from multiprocessing import Queue
-from client.client import Client
+from client import Client
 
-from parser.concrete.message_type_parser import MessageType
-from parser.concrete.message_type_parser import MessageTypeParser
-from trentorian.map import (
+from parser.concrete import MessageType, MessageTypeParser
+from .map import (
     create_default_map,
     Map,
     MapTile,
