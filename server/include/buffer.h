@@ -24,7 +24,6 @@ typedef struct {
 } net_client_t;
 
 bool net_disconnect(net_client_t *net);
-void net_read(net_client_t *net);
 char *net_getline(net_client_t *net);
 void net_move_buffer(net_client_t *target, net_client_t *source);
 

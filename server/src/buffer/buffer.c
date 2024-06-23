@@ -13,10 +13,9 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "buffer_internal.h"
 #include "error.h"
 #include "stdio.h"
-
-const size_t BUFFER_SIZE = 512;
 
 bool net_disconnect(net_client_t *net)
 {
@@ -91,37 +90,6 @@ void net_read(net_client_t *net)
         net->buffer.size += bytes_read;
         ptr[bytes_read] = '\0';
     }
-}
-
-ssize_t net_write(net_client_t *net, const char *str, size_t n)
-{
-    ssize_t ret = 0;
-
-    if (net->fd < 0)
-        return -1;
-    ret = write(net->fd, str, n);
-    if (ret > 0)
-        return ret;
-    ERRF("Err writing to fd: %s", strerror(errno));
-    net_disconnect(net);
-    return ret;
-}
-
-ssize_t net_dprintf(net_client_t *net, const char *fmt, ...)
-{
-    va_list args;
-    ssize_t ret = 0;
-
-    if (net->fd < 0)
-        return -1;
-    va_start(args, fmt);
-    ret = vdprintf(net->fd, fmt, args);
-    va_end(args);
-    if (ret > 0)
-        return ret;
-    ERR("Err writing to fd");
-    net_disconnect(net);
-    return ret;
 }
 
 void net_move_buffer(net_client_t *target, net_client_t *source)
