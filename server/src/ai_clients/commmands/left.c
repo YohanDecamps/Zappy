@@ -19,5 +19,5 @@ void ai_cmd_left(
     client->dir = MOD(client->dir - 1, 4);
     sprintf(buf, "%d", client->id);
     gui_cmd_ppo(server, server->gui_client, buf);
-    ai_write(client, "ok\n", 3);
+    net_write(&client->net, "ok\n", 3);
 }

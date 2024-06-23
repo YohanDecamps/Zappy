@@ -13,7 +13,7 @@
 
         devShells.default = pkgs.mkShell {
           inputsFrom = builtins.attrValues self.packages.${system} ++ (with pkgs; [glfw assimp]);
-          packages = with pkgs; [clang-tools_18 strace];
+          packages = with pkgs; [clang-tools_18 strace aflplusplus python312];
           env.MAKEFLAGS = "-j12";
         };
 

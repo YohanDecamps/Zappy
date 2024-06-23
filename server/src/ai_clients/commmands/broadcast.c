@@ -75,11 +75,11 @@ void ai_cmd_broadcast(server_t *server, ai_client_t *client, char *args)
 
     for (size_t i = 0; i < server->ai_clients.nb_elements; ++i) {
         current = server->ai_clients.elements[i];
-        if (current->s_fd >= 0 && current != client)
-            ai_dprintf(
-                current, "message %d, %s\n", get_dir(server, client, current),
-                args);
+        if (current != client)
+            net_dprintf(
+                &current->net, "message %d, %s\n",
+                get_dir(server, client, current), args);
     }
-    ai_write(client, "ok\n", 3);
+    net_write(&client->net, "ok\n", 3);
     gui_cmd_pbc(server, server->gui_client, client->id, args);
 }

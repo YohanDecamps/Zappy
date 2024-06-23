@@ -11,9 +11,9 @@
 #include "commands.h"
 #include "server.h"
 
-void gui_cmd_suc(UNUSED server_t *server, gui_client_t *client)
+void gui_cmd_suc(UNUSED server_t *server, gui_client_t *gui)
 {
-    if (client == NULL)
+    if (gui == NULL)
         return;
-    gui_dprintf(client, "suc\n");
+    net_dprintf(&gui->net, "suc\n");
 }

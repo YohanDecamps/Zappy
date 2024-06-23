@@ -11,9 +11,9 @@
 #include "commands.h"
 
 void gui_cmd_pgt(
-    UNUSED server_t *server, gui_client_t *client, int ai_id, int r)
+    UNUSED server_t *server, gui_client_t *gui, int ai_id, int r)
 {
-    if (client == NULL)
+    if (gui == NULL)
         return;
-    gui_dprintf(client, "pgt %d %d\n", ai_id, r);
+    net_dprintf(&gui->net, "pgt %d %d\n", ai_id, r);
 }

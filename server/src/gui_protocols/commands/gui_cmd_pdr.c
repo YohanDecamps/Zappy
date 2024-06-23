@@ -12,9 +12,9 @@
 #include "server.h"
 
 void gui_cmd_pdr(
-    UNUSED server_t *server, gui_client_t *client, int ai_id, int r)
+    UNUSED server_t *server, gui_client_t *gui, int ai_id, int r)
 {
-    if (client == NULL)
+    if (gui == NULL)
         return;
-    gui_dprintf(client, "pdr %d %d\n", ai_id, r);
+    net_dprintf(&gui->net, "pdr %d %d\n", ai_id, r);
 }

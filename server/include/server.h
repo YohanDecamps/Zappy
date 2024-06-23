@@ -14,21 +14,17 @@
 #include <unistd.h>
 
 #include "array.h"
+#include "buffer.h"
+#include "error.h"
 
 #define ATTR(x) __attribute__((x))
 #define UNUSED ATTR(unused)
 #define MOD(x, y) ((((x) % (y)) + (y)) % (y))
 #define LEN(x) (sizeof(x) / sizeof *(x))
+
 #define UNPACK(x) (x), sizeof(x)
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)
-
-// Print error messages
-#define __header __FILE_NAME__ ":" TOSTRING(__LINE__)
-#define ERR(m) (void)!write(STDERR_FILENO, UNPACK(__header " (" m ")\n"))
-#define ERRF(f, ...) dprintf(STDERR_FILENO, __header " (" f ")\n", __VA_ARGS__)
-#define OOM ERR("Out of memory")
-
 #define IDX(x, y, w, h) (MOD(y, h) * (w) + MOD(x, w))
 #define R_COUNT 9
 #define CELL(s, x, y) (&s->map[IDX(x, y, s->ctx.width, s->ctx.height)])
@@ -112,10 +108,25 @@ typedef struct context_s {
     long freq;
 } context_t;
 
+enum {
+    PORT = 0,
+    WIDTH = 1,
+    HEIGHT = 2,
+    CLIENTS = 3,
+    FREQ = 4,
+};
+
+typedef struct arg_parse_s {
+    int opt;
+    int n_count;
+    char *f_values[5];
+    char *n_values[256];
+} arg_parse_t;
+
 typedef struct queued_cmd_s queued_cmd_t;
 
 typedef struct ai_client_s {
-    int s_fd;
+    net_client_t net;
     char team[512];
     ressource_t res[R_COUNT];
     vector_t pos;
@@ -126,11 +137,6 @@ typedef struct ai_client_s {
         WEST
     } dir;
     int lvl;
-    struct {
-        char *str;
-        size_t size;
-        size_t alloc;
-    } buffer;
     int id;
     queued_cmd_t *q_cmds;
     size_t q_size;
@@ -150,12 +156,7 @@ static const sound_direction_t conv_table[] = {
     S_NORTH, S_EAST, S_SOUTH, S_WEST};
 
 typedef struct gui_client_s {
-    int s_fd;
-    struct {
-        char *str;
-        size_t size;
-        size_t alloc;
-    } buffer;
+    net_client_t net;
 } gui_client_t;
 
 typedef struct server_s {
@@ -173,31 +174,30 @@ typedef struct server_s {
     precise_time_t last_refill;
     array_t incantations;
     precise_time_t now;
+    bool incoming_connection;
 } server_t;
 
-int server(UNUSED int argc, UNUSED char **argv);
+int server(int argc, char **argv);
 payload_t *get_cell_payload(server_t *serv, vector_t *pos, payload_t *payload);
 res_name_t get_ressource_type(char *name);
 egg_t *spawn_egg(server_t *server, char *team);
 size_t count_team(server_t *serv, char *team);
 void refill_map(server_t *server, context_t *ctx);
 int init_map(server_t *server, context_t *ctx);
+void read_buffers(server_t *serv);
+
 int iterate_waitlist(server_t *server);
 
-ATTR(format(printf, 2, 3))
-ssize_t ai_dprintf(ai_client_t *client, const char *fmt, ...);
-ssize_t ai_write(ai_client_t *client, const char *str, size_t n);
-
-ATTR(format(printf, 2, 3))
-ssize_t gui_dprintf(gui_client_t *gui, const char *fmt, ...);
-ssize_t gui_write(gui_client_t *gui, const char *str, size_t n);
-
 void iterate_ai_clients(server_t *server);
-int init_ai_client(server_t *serv, int client_fd, char *team, size_t egg_idx);
+int init_ai_client(
+    server_t *serv, net_client_t *net, char *team, size_t egg_idx);
 int remove_ai_client(server_t *server, size_t idx);
 void move_ai_client(server_t *server, ai_client_t *client, int dir);
+
+int iterate_gui(server_t *server);
+int remove_gui(server_t *server);
+
 char **my_str_to_word_array(const char *str, char const *separator);
 ai_client_t *get_client_by_id(const server_t *server, int client_id);
 egg_t *get_egg_by_id(const server_t *server, int egg_id);
 void free_array(void **array);
-int iterate_gui(server_t *server);

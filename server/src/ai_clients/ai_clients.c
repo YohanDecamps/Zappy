@@ -12,8 +12,68 @@
 #include <time.h>
 
 #include "ai_internal.h"
+#include "commmands/commands.h"
 #include "gui_protocols/commands/commands.h"
 #include "server.h"
+
+// Here we define the commands in a static array
+// so we can get the size at compile time.
+// It needs to be sorted for the bsearch function.
+static const struct ai_cmd_s commands[] = {
+    {"Broadcast", ai_cmd_broadcast, 7.},
+    {"Connect_nbr", ai_cmd_connect_nbr, 0.},
+    {"Eject", ai_cmd_eject, 7.},
+    {"Fork", ai_cmd_fork, 0.},
+    {"Forward", ai_cmd_forward, 7.},
+    {"Incantation", ai_cmd_incantation, 0.},
+    {"Inventory", ai_cmd_inventory, 1.},
+    {"Left", ai_cmd_left, 7.},
+    {"Look", ai_cmd_look, 7.},
+    {"Right", ai_cmd_right, 7.},
+    {"Set", ai_cmd_set, 7.},
+    {"Take", ai_cmd_take, 7.},
+};
+
+const struct ai_cmd_s *const AI_CLIENT_COMMANDS = commands;
+const size_t AI_CLIENT_COMMANDS_LEN = LEN(commands);
+
+static int compare(const char *buffer, const struct ai_cmd_s *cmd)
+{
+    if (buffer == NULL || cmd == NULL || cmd->cmd == NULL)
+        return 1;
+    return strcmp(buffer, cmd->cmd);
+}
+
+static struct ai_cmd_s *get_ai_cmd(const char *cmd)
+{
+    return bsearch(
+        cmd, AI_CLIENT_COMMANDS, AI_CLIENT_COMMANDS_LEN,
+        sizeof *AI_CLIENT_COMMANDS,
+        (int (*)(const void *, const void *))compare);
+}
+
+static void exec_ai_cmd(server_t *server, ai_client_t *client, char *buffer)
+{
+    char *content = NULL;
+    struct ai_cmd_s *cmd = NULL;
+
+    content = strchr(buffer, ' ');
+    if (content != NULL) {
+        *content = '\0';
+        content++;
+    } else {
+        content = "";
+    }
+    cmd = get_ai_cmd(buffer);
+    if (cmd == NULL || cmd->func == NULL) {
+        gui_cmd_suc(server, server->gui_client);
+        net_write(&client->net, "ko\n", 3);
+        return;
+    }
+    queue_add_cmd(
+        server, client,
+        &(queued_cmd_t){cmd->func, cmd->time, strdup(content)});
+}
 
 void move_ai_client(server_t *server, ai_client_t *client, int dir)
 {
@@ -39,15 +99,14 @@ void move_ai_client(server_t *server, ai_client_t *client, int dir)
 }
 
 static ai_client_t *create_client_obj(
-    egg_t *egg, server_t *serv, int client_fd, char *team)
+    egg_t *egg, server_t *serv, net_client_t *net, char *team)
 {
-    ai_client_t *client = malloc(sizeof *client);
+    ai_client_t *client = calloc(1, sizeof *client);
 
     if (client == NULL)
         return OOM, NULL;
-    memset(client, 0, sizeof *client);
     strcpy(client->team, team);
-    client->s_fd = client_fd;
+    net_move_buffer(&client->net, net);
     client->dir = rand() % 4;
     client->pos = egg->pos;
     client->lvl = 1;
@@ -59,10 +118,11 @@ static ai_client_t *create_client_obj(
     return client;
 }
 
-int init_ai_client(server_t *serv, int client_fd, char *team, size_t egg_idx)
+int init_ai_client(
+    server_t *serv, net_client_t *net, char *team, size_t egg_idx)
 {
     egg_t *egg = serv->eggs.elements[egg_idx];
-    ai_client_t *client = create_client_obj(egg, serv, client_fd, team);
+    ai_client_t *client = create_client_obj(egg, serv, net, team);
 
     if (client == NULL)
         return RET_ERROR;
@@ -72,18 +132,10 @@ int init_ai_client(server_t *serv, int client_fd, char *team, size_t egg_idx)
     serv->map_res[EGG].quantity--;
     gui_cmd_ebo(serv, serv->gui_client, egg);
     gui_cmd_pnw(serv, serv->gui_client, client);
-    ai_dprintf(client, "%zu\n", serv->ctx.client_nb - count_team(serv, team));
-    ai_dprintf(client, "%ld %ld\n", serv->ctx.width, serv->ctx.height);
+    net_dprintf(
+        &client->net, "%zu\n", serv->ctx.client_nb - count_team(serv, team));
+    net_dprintf(&client->net, "%ld %ld\n", serv->ctx.width, serv->ctx.height);
     return RET_VALID;
-}
-
-void disconnect_ai_client(ai_client_t *ai)
-{
-    if (!ai)
-        return;
-    if (ai->s_fd > 0)
-        close(ai->s_fd);
-    ai->s_fd = -1;
 }
 
 int remove_ai_client(server_t *server, size_t idx)
@@ -95,14 +147,12 @@ int remove_ai_client(server_t *server, size_t idx)
     client = server->ai_clients.elements[idx];
     if (client) {
         gui_cmd_pdi(server, server->gui_client, client->id);
-        ai_write(client, UNPACK("dead\n"));
-        disconnect_ai_client(client);
+        net_write(&client->net, UNPACK("dead\n"));
+        net_disconnect(&client->net);
         CELL(server, client->pos.x, client->pos.y)->res[PLAYER].quantity--;
-        free(client->buffer.str);
         free(client->q_cmds);
-        free(server->ai_clients.elements[idx]);
     }
-    remove_elt_to_array(&server->ai_clients, idx);
+    free(remove_elt_to_array(&server->ai_clients, idx));
     return RET_VALID;
 }
 
@@ -146,24 +196,21 @@ static void summon_incantations(server_t *server)
 
 void iterate_ai_clients(server_t *server)
 {
-    fd_set rfd;
-    ai_client_t *client = NULL;
+    ai_client_t *ai = NULL;
+    char *ptr = NULL;
 
-    for (size_t i = 0; i < server->ai_clients.nb_elements; ++i) {
-        client = server->ai_clients.elements[i];
-        if (!client->busy)
-            queue_pop_cmd(server, client);
-        if (client->s_fd < 0 || starve_to_death(server, client)) {
-            ERR("Disconnected"), remove_ai_client(server, i), i -= 1;
+    for (size_t i = 0; i < server->ai_clients.nb_elements; i++) {
+        ai = server->ai_clients.elements[i];
+        if (!ai->busy)
+            queue_pop_cmd(server, ai);
+        if (ai->net.fd < 0 || starve_to_death(server, ai)) {
+            remove_ai_client(server, i), i -= 1;
             continue;
         }
-        FD_ZERO(&rfd);
-        FD_SET(client->s_fd, &rfd);
-        if (select(
-                client->s_fd + 1, &rfd, NULL, NULL,
-                &(struct timeval){0, 0}) > 0 &&
-            FD_ISSET(client->s_fd, &rfd))
-            handle_ai_client(server, client);
+        for (; ITER_BUF(ptr, &ai->net);) {
+            exec_ai_cmd(server, ai, ptr);
+            free(ptr);
+        }
     }
     summon_incantations(server);
 }

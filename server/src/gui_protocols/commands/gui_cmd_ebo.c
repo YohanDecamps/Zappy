@@ -11,9 +11,9 @@
 #include "commands.h"
 #include "server.h"
 
-void gui_cmd_ebo(UNUSED server_t *server, gui_client_t *client, egg_t *egg)
+void gui_cmd_ebo(UNUSED server_t *server, gui_client_t *gui, egg_t *egg)
 {
-    if (client == NULL)
+    if (gui == NULL)
         return;
-    gui_dprintf(client, "ebo %d\n", egg->id);
+    net_dprintf(&gui->net, "ebo %d\n", egg->id);
 }

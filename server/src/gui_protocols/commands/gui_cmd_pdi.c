@@ -11,9 +11,9 @@
 #include "commands.h"
 #include "server.h"
 
-void gui_cmd_pdi(UNUSED server_t *server, gui_client_t *client, int ai_id)
+void gui_cmd_pdi(UNUSED server_t *server, gui_client_t *gui, int ai_id)
 {
-    if (client == NULL)
+    if (gui == NULL)
         return;
-    gui_dprintf(client, "pdi %d\n", ai_id);
+    net_dprintf(&gui->net, "pdi %d\n", ai_id);
 }

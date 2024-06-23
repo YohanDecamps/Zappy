@@ -1,0 +1,26 @@
+babr
+bebe
+Broadcast hello
+Connect_nbr
+Eject
+Fork
+Forward
+Incantation
+Inventory
+Left
+Look
+Right
+Set food
+Take food
+Set linemate
+Take linemate
+Set deraumere
+Take deraumere
+Set sibur
+Take sibur
+Set mendiane
+Take mendiane
+Set phiras
+Take phiras
+Set thystame
+Take thystame

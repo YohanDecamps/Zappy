@@ -120,7 +120,7 @@ static void print_cell_content(
 {
     for (short j = 0; j < R_COUNT; ++j) {
         for (int k = 0; k < cell->res[j].quantity; ++k) {
-            ai_dprintf(client, "%s%s", (space) ? " " : "", r_name[j]);
+            net_dprintf(&client->net, "%s%s", (*space) ? " " : "", r_name[j]);
             *space = true;
         }
     }
@@ -132,14 +132,14 @@ void ai_cmd_look(server_t *server, ai_client_t *client, UNUSED char *args)
     bool space = false;
 
     if (payload == NULL) {
-        ai_write(client, "[]\n", 3);
+        net_write(&client->net, "[]\n", 3);
         return;
     }
-    ai_dprintf(client, "[");
+    net_dprintf(&client->net, "[");
     for (size_t i = 0; i < payload->size; ++i) {
         if (i != 0)
-            ai_dprintf(client, ",");
+            net_dprintf(&client->net, ",");
         print_cell_content(client, &payload->cell_content[i], &space);
     }
-    ai_dprintf(client, "]\n");
+    net_dprintf(&client->net, "]\n");
 }

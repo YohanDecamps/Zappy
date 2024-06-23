@@ -8,19 +8,13 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "buffer.h"
 #include "gui_protocols/commands/commands.h"
 #include "server.h"
 #include "stdio.h"
 
 static bool team_valid(server_t *serv, char *team)
 {
-    char *newline = strchr(team, '\n');
-
-    if (newline != NULL) {
-        *newline = '\0';
-        if (team != newline && *(newline - 1) == '\r')
-            *(newline - 1) = '\0';
-    }
     for (size_t i = 0; i < serv->ctx.names.nb_elements; i++)
         if (strcmp(team, serv->ctx.names.elements[i]) == 0)
             return true;
@@ -39,27 +33,26 @@ static long get_egg(server_t *serv, const char *team)
     return -1;
 }
 
-static void connect_ai_client(
-    server_t *serv, size_t idx, int client_fd, char *team)
+static void connect_ai_client(server_t *serv, net_client_t *client, char *team)
 {
     long egg = -1;
 
     if (!team_valid(serv, team)) {
         ERR("team is invalid");
-        (void)!write(client_fd, "ko\n", 3);
+        net_write(client, "ko\n", 3);
         return;
     }
     egg = get_egg(serv, team);
     if (count_team(serv, team) >= serv->ctx.client_nb || egg == -1) {
         ERR("team is full");
-        (void)!write(client_fd, "ko\n", 3);
+        net_write(client, "ko\n", 3);
         return;
     }
-    free(remove_elt_to_array(&serv->waitlist_fd, idx));
-    if (init_ai_client(serv, client_fd, team, egg) == RET_ERROR) {
-        OOM;
-        (void)!write(client_fd, "ko\n", 3);
-        close(client_fd);
+    if (init_ai_client(serv, client, team, egg) == RET_VALID) {
+        client->fd = -1;
+    } else {
+        net_write(client, "ko\n", 3);
+        net_disconnect(client);
     }
 }
 
@@ -75,61 +68,54 @@ static void log_new_gui(server_t *serv)
         gui_cmd_pnw(serv, serv->gui_client, serv->ai_clients.elements[i]);
 }
 
-static void connect_gui_client(server_t *serv, int idx, int client_fd)
+static void connect_gui_client(server_t *serv, net_client_t *client)
 {
     gui_client_t *gui = NULL;
 
-    free(remove_elt_to_array(&serv->waitlist_fd, idx));
     if (serv->gui_client != NULL) {
-        (void)!write(client_fd, "ko\n", 3);
+        net_write(client, "ko\n", 3);
         ERR("GUI client is already connected");
-        close(client_fd);
+        net_disconnect(client);
         return;
     }
-    gui = calloc(1, sizeof *serv->gui_client);
+    gui = calloc(1, sizeof *gui);
     if (gui == NULL) {
-        (void)!write(client_fd, "ko\n", 3);
+        net_write(client, "ko\n", 3);
         OOM;
-        close(client_fd);
+        net_disconnect(client);
         return;
     }
-    gui->s_fd = client_fd;
+    net_move_buffer(&gui->net, client);
     serv->gui_client = gui;
     log_new_gui(serv);
 }
 
-static void handle_waitlist(server_t *serv, size_t i, int client_fd)
+static void exec_wait_cmd(server_t *server, net_client_t *client, char *buffer)
 {
-    char buffer[DEFAULT_SIZE];
-    ssize_t bytes_read = 0;
-
-    bytes_read = read(client_fd, buffer, DEFAULT_SIZE);
-    if (bytes_read < 0) {
-        free(remove_elt_to_array(&serv->waitlist_fd, i));
-        ERR("waitlist client disconnected");
-        return;
-    }
-    buffer[bytes_read] = '\0';
-    if (strncmp(buffer, "GRAPHIC\n", bytes_read) == 0) {
-        connect_gui_client(serv, i, client_fd);
+    if (strcmp(buffer, "GRAPHIC") == 0) {
+        connect_gui_client(server, client);
     } else {
-        connect_ai_client(serv, i, client_fd, buffer);
+        connect_ai_client(server, client, buffer);
     }
 }
 
 int iterate_waitlist(server_t *server)
 {
-    fd_set rfd;
-    int client_fd = 0;
+    char *ptr = NULL;
+    net_client_t *client = NULL;
 
     for (size_t i = 0; i < server->waitlist_fd.nb_elements; ++i) {
-        client_fd = *((int *)server->waitlist_fd.elements[i]);
-        FD_ZERO(&rfd);
-        FD_SET(client_fd, &rfd);
-        if (select(client_fd + 1, &rfd, NULL, NULL, &(struct timeval){0}) < 0)
+        client = server->waitlist_fd.elements[i];
+        if (client->fd < 0) {
+            net_disconnect(client);
+            free(remove_elt_to_array(&server->waitlist_fd, i));
+            i -= 1;
             continue;
-        if (FD_ISSET(client_fd, &rfd))
-            handle_waitlist(server, i, client_fd);
+        }
+        for (; ITER_BUF(ptr, client);) {
+            exec_wait_cmd(server, client, ptr);
+            free(ptr);
+        }
     }
     return 0;
 }

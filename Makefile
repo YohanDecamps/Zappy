@@ -18,7 +18,7 @@ CMAKEFLAGS += -DCMAKE_INSTALL_PREFIX=./ -DCMAKE_INSTALL_BINDIR=./
 DEFAULT_GOAL := all
 
 .PHONY: all
-.NOTPARALLEL: re # Because the pc is gonna die if we dont
+.NOTPARALLEL: all # Because the pc is gonna die if we dont
 all: zappy_server zappy_gui zappy_ai
 
 .PHONY: zappy_server
@@ -39,8 +39,8 @@ zappy_ai:
 
 .PHONY: clean
 clean:
-	rm -f zappy_ai zappy_gui zap_server
-	rm -rf .build lib64 include .venv
+	$(RM) zappy_ai zappy_gui zap_server
+	$(RM) -r .build lib64 include .venv
 
 .PHONY: re
 .NOTPARALLEL: re

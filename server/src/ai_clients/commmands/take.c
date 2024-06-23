@@ -18,13 +18,13 @@ void ai_cmd_take(server_t *server, ai_client_t *client, char *args)
     char buff[256] = {0};
 
     if ((int)res == -1 || cell->res[res].quantity == 0) {
-        ai_write(client, "ko\n", 3);
+        net_write(&client->net, "ko\n", 3);
         return;
     }
     cell->res[res].quantity--;
     server->map_res[res].quantity--;
     client->res[res].quantity++;
-    ai_write(client, "ok\n", 3);
+    net_write(&client->net, "ok\n", 3);
     sprintf(buff, "%d", client->id);
     gui_cmd_pgt(server, server->gui_client, client->id, res);
     gui_cmd_mct(server, server->gui_client, NULL);
