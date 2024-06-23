@@ -50,20 +50,35 @@ static int compute_dir(
     return -1;
 }
 
-void ai_cmd_broadcast(server_t *server, ai_client_t *client, char *args)
+static int get_dir(server_t *server, ai_client_t *client, ai_client_t *current)
 {
     int dir = 0;
-    ai_client_t *cur = NULL;
+    int current_dir = 0;
+    int computed_dir = 0;
+
+    if (client->pos.x == current->pos.x && client->pos.y == current->pos.y)
+        return 0;
+    current_dir = conv_table[current->dir];
+    computed_dir = compute_dir(
+        client->pos, current->pos,
+        (int[2]){(int)server->ctx.width, (int)server->ctx.height});
+    dir = computed_dir - current_dir;
+    if (dir < 0)
+        dir += 7;
+    dir += 1;
+    return dir;
+}
+
+void ai_cmd_broadcast(server_t *server, ai_client_t *client, char *args)
+{
+    ai_client_t *current = NULL;
 
     for (size_t i = 0; i < server->ai_clients.nb_elements; ++i) {
-        cur = server->ai_clients.elements[i];
-        if (cur->net.fd < 0 || cur == client)
-            continue;
-        dir = (client->pos.x == cur->pos.x && client->pos.y == cur->pos.y)
-            ? 0 : abs((int)(conv_table[cur->dir] - compute_dir(
-            client->pos, cur->pos,
-            (int[2]){(int)server->ctx.width, (int)server->ctx.height}))) + 1;
-        net_dprintf(&cur->net, "message %d, %s\n", dir, args);
+        current = server->ai_clients.elements[i];
+        if (current != client)
+            ai_dprintf(
+                current, "message %d, %s\n", get_dir(server, client, current),
+                args);
     }
     net_write(&client->net, "ok\n", 3);
     gui_cmd_pbc(server, server->gui_client, client->id, args);

@@ -18,7 +18,7 @@ from trentorian.map import (
     MapTile,
     merge_maps
 )
-
+from string import ascii_lowercase
 from utils import (
     determine_direction,
     check_levelup,
@@ -129,6 +129,8 @@ class Trantorian:
         self.mini_food: int = 20 + ((self.known_map.width + self.known_map.height) * 8 / FOOD)
         self.consider_dead: float = (self.known_map.width + self.known_map.height) * 8 + 400
         self.ticks: int = 0
+        self.last_broadcast: int = 0
+        self.last_birth: int = -80 # so it can do an incant at the spawn
         self.nbr_tests_ticks: int = 0
         self.tick_time: float = 0
 
@@ -242,8 +244,12 @@ class Trantorian:
         """
         if self.dead:
             return False
-        if self.ticks > self.consider_dead - 20:
+        if self.ticks - self.last_broadcast > self.consider_dead - 20:
             self.broadcast('just$update', ["all"])
+        if self.ticks > 10000:
+            self.ticks = 0
+            self.last_broadcast = 0
+            self.last_birth = 0
         return True
 
     def iter_food(self) -> bool:
@@ -261,10 +267,11 @@ class Trantorian:
         max_reached: bool = True
         state_change: bool = True
         under_mini: bool = True
+        direct: int = 0
         while self.iter() and (under_mini or (max_reached and state_change)):
             if self.dead:
                 return False
-            if not self.look_around():
+            if direct != 4 and not self.look_around():
                 continue
             for _ in range(self.level): # this can be optimised
                 for _ in range(self.get_current_case().content["food"]):
@@ -273,13 +280,12 @@ class Trantorian:
                 if self.dead:
                     return False
                 self.forward()
-            direct: int = random.randint(0, 5)
-            if direct == 1:
-                self.left()
-            elif direct == 2:
-                self.right()
+                direct: int = random.randint(0, 8)
+                if direct == 4:
+                    self.left()
+                    self.look_around()
             self.get_inventory()
-            max_reached: bool =  self.inventory["food"] < self.mini_food + 10
+            max_reached: bool =  self.inventory["food"] < self.mini_food + 30
             state_change: bool = self.state != "going somewhere"
             under_mini: bool = self.inventory["food"] < self.mini_food
         return not self.dead
@@ -306,8 +312,8 @@ class Trantorian:
         i = 0
         while self.iter_food() and self.state == "wander" and not can_level_up:
             self.get_unused_slot()
-            if len(self.others) < 7 and self.unused_slot > 0:
-                self.asexual_multiplication(queue)
+            if len(self.others) < MAX_PLAYER and self.unused_slot > 0:
+                self.asexual_multiplication(queue, "wander")
             self.look_around()
             for _ in range(self.level): # TODO maybe some priority order here
                 if not self.take_tile_objects():
@@ -323,11 +329,8 @@ class Trantorian:
             i += 1
             if not i % 4:
                 continue
-            # self.troll_broadcasts() # TODO put this back
+            self.troll_broadcasts()
             self.broadcast("just$update", ["all"])
-            self.get_unused_slot()
-            if len(self.others) < MAX_PLAYER and self.unused_slot > 0:
-                self.asexual_multiplication(queue)
         if can_level_up and self.state != "going somewhere":
             self.state = "shaman"
         return can_level_up
@@ -385,11 +388,9 @@ class Trantorian:
         """
         if not self.iter_food():
             return
-        # if len(self.others) > 15:
-        #     self.suicide()
-        #     return
-        if self.client.team_size > 0 and len(self.others) < MAX_PLAYER:
-            self.asexual_multiplication(queue)
+        self.get_unused_slot()
+        if self.client.team_size > 0 and len(self.others) < MAX_PLAYER and self.unused_slot > 0:
+            self.asexual_multiplication(queue, "start")
         self.broadcast("im$alive", ["all"])
         for _ in range(10): # use to set a first value for tick_time
             self.get_inventory()
@@ -429,7 +430,10 @@ class Trantorian:
             return
         if tt == 1:
             self.broadcast('.', [])
-        elif tt == 2:
+        if tt == 2:
+            length = random.randint(50, 200)
+            self.broadcast([random.choice(ascii_lowercase) for _ in range(length)], ["all"])
+        elif tt == 4:
             idx = random.randint(0, len(self.received_messages))
             self.broadcast(self.received_messages.pop(idx), [])
         elif tt == 3:
@@ -442,6 +446,7 @@ class Trantorian:
         """look around until we are dead
         """
         while not self.dead:
+            self.drop_object("food")
             self.look_around()
         return
 
@@ -533,7 +538,8 @@ class Trantorian:
         direct: int = int(direct)
         msg = msg.strip()
         if not msg.startswith(self.team):
-            self.received_messages.append(msg)
+            if msg.count("$") < 3:
+                self.received_messages.append(msg)
             return
         msg = msg[len(self.team):]
         parts = msg.strip().split("$")
@@ -722,7 +728,8 @@ class Trantorian:
         """
         if self.dead:
             return False
-        self.ticks = 0
+        self.ticks += 7
+        self.last_broadcast = self.ticks
         self.kill_others()
         if receivers == []:
             self.client.send_cmd("Broadcast " + content)
@@ -754,23 +761,27 @@ class Trantorian:
             return False
         return True
 
-    def asexual_multiplication(self, queue: Queue) -> bool:
+    def asexual_multiplication(self, queue: Queue, place: str='no-info') -> bool:
         """selffucking for a new trantorian
         time limit : 42/f
 
         Args:
             queue (Queue): Queue to put in the good hole to fertilize itself
-
+            place (str): info on where it was called
         Returns:
             bool: false if self is sterile
         """
         if self.dead:
             return False
+        if self.ticks - self.last_birth < 80:
+            return False
+        self.last_birth = self.ticks
         self.ticks += 7
         self.client.send_cmd("Fork")
         if self.wait_answer() != 'ok':
             return False
-        queue.put("birth")
+        queue.put(f"birth {place}")
+        self.dprint("birth baby")
         return True
 
     def eject(self) -> bool:
