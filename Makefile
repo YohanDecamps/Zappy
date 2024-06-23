@@ -5,8 +5,11 @@
 ## Makefile
 ##
 
+PY ?= python3
+
 ifeq ($(DEBUG),1)
 CMAKEFLAGS ?= -DCMAKE_BUILD_TYPE=Debug
+PYFLAGS += -e
 else
 CMAKEFLAGS ?= -DCMAKE_BUILD_TYPE=Release
 endif
@@ -28,14 +31,16 @@ zappy_gui:
 	cmake -S GUI -B .build/gui ${CMAKEFLAGS}
 	cmake --build .build/gui --target install
 
-# TODO
 .PHONY: zappy_ai
 zappy_ai:
-	ln -fs AI/zappy_ai zappy_ai
+	$(PY) -m venv .venv
+	.venv/bin/pip install $(PYFLAGS) ./AI
+	ln -fs .venv/bin/zappy_ai zappy_ai
 
 .PHONY: clean
 clean:
-	rm -rf .build lib64 include
+	rm -f zappy_ai zappy_gui zap_server
+	rm -rf .build lib64 include .venv
 
 .PHONY: re
 .NOTPARALLEL: re
