@@ -159,12 +159,7 @@ typedef struct server_s {
     precise_time_t last_refill;
     array_t incantations;
     precise_time_t now;
-    struct {
-        fd_set read;
-        fd_set write;
-        fd_set except;
-        int select;
-    } fd_set;
+    bool incoming_connection;
 } server_t;
 
 int server(int argc, char **argv);

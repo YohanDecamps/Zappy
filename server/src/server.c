@@ -92,33 +92,24 @@ size_t count_team(server_t *serv, char *team)
     return count;
 }
 
-static void add_client(server_t *serv, int fd)
-{
-    net_client_t *client = calloc(1, sizeof *client);
-
-    if (!client) {
-        OOM;
-        close(fd);
-        return;
-    }
-    client->fd = fd;
-    if (add_elt_to_array(&serv->waitlist_fd, client) == RET_ERROR) {
-        net_write(client, "ko\n", 3);
-        net_disconnect(client);
-        free(client);
-        return;
-    }
-    net_dprintf(client, "WELCOME\n");
-}
-
-static int new_client(server_t *serv)
+static int add_client(server_t *serv)
 {
     socklen_t len = sizeof serv->s_addr;
+    static net_client_t cl = {0};
+    net_client_t *client = NULL;
+    int fd = accept(serv->s_fd, (struct sockaddr *)&serv->s_addr, &len);
 
-    if (serv->fd >= 0 && serv->fd_set.select > 0 &&
-        FD_ISSET(serv->s_fd, &serv->fd_set.read))
-        return accept(serv->s_fd, (struct sockaddr *)&serv->s_addr, &len);
-    return -1;
+    if (fd == -1)
+        return ERR("accept failed"), 0;
+    cl.fd = fd;
+    client = calloc(1, sizeof *client);
+    if (client == NULL ||
+        add_elt_to_array(&serv->waitlist_fd, client) == RET_ERROR)
+        return OOM, net_write(&cl, "ko\n", 3), net_disconnect(&cl),
+            free(client), 0;
+    net_move_buffer(client, &cl);
+    net_dprintf(client, "WELCOME\n");
+    return 0;
 }
 
 int server(int argc, char **argv)
@@ -131,12 +122,11 @@ int server(int argc, char **argv)
         init_server(&server, server.ctx.port) != RET_VALID ||
         init_map(&server, &server.ctx) != RET_VALID)
         return RET_ERROR;
-    for (int fd = -1;; fd = -1) {
+    for (;;) {
         server.now = gettime();
         read_buffers(&server);
-        fd = new_client(&server);
-        if (fd != -1)
-            add_client(&server, fd);
+        if (server.incoming_connection && add_client(&server) == RET_VALID)
+            server.incoming_connection = false;
         refill_map(&server, &server.ctx);
         iterate_ai_clients(&server);
         iterate_gui(&server);
