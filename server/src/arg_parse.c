@@ -34,7 +34,7 @@ static void handle_error(arg_parse_t *cringe, context_t *ctx)
     ctx->freq = atoi(cringe->f_values[FREQ]);
     ctx->client_nb = atoi(cringe->f_values[CLIENTS]);
     if (ctx->port <= 0 || ctx->width <= 0 || ctx->height <= 0 ||
-        ctx->width > 30 || ctx->height > 30 || ctx->freq <= 0 ||
+        ctx->width > 300 || ctx->height > 300 || ctx->freq <= 0 ||
         ctx->client_nb <= 0 || ctx->names.nb_elements == 0)
         ERR("Invalid flags"), exit(RET_ERROR);
 }
