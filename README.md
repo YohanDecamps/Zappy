@@ -1,4 +1,6 @@
 # ZAPPY
+![alt text](image-3.png)
+![alt text](image-2.png)
 
 ## Purpose
 
@@ -51,3 +53,27 @@ private:
     struct sockaddr_in _addr;
 };
 ```
+
+### Modding
+
+You can add any model to the game by following the instructions in the "Modding" section.
+
+![alt text](image-1.png)
+
+#### Procedure for adding a model to Zappy:
+
+1. Find a .glb model online (it should be in a T-pose), for example, on Sketchfab [https://sketchfab.com/].
+2. Import the model to a site that converts .glb to .obj ZIP, like this one: [https://imagetostl.com/convert/file/glb/to/obj#convert].
+3. Import the ZIP file into Mixamo [https://www.mixamo.com/#/?page=3&query=&type=Character].
+4. Download the T-pose model from Mixamo as a .dae file.
+5. Choose animations for birth, ritual, idle, and movement.
+6. Download the animations with default settings in .dae format.
+7. Create a folder with the skin's name in assets/Players.
+8. Extract all ZIP files for the animations and the model into this folder.
+9. Remove all "textures" files from the animations, keeping only the one from the T-pose model.
+10. Rename the T-pose model to "SkinName.dae" (it should match the folder name of the skin).
+11. Rename all animation .dae files to Birth, Ritual, Move, and Idle.
+
+should look like this:
+
+![alt text](image.png)
